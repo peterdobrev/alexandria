@@ -13,7 +13,6 @@ Base URL: `/api`
 |--------|----------|------|------|
 | GET | `/users/{id}` | - | - |
 | PUT | `/users/{id}` | `{ displayName?, password? }` | Owner |
-| GET | `/users/{id}/documents` | - | - |
 
 ## Documents
 | Method | Endpoint | Body / Params | Auth |
@@ -23,14 +22,6 @@ Base URL: `/api`
 | POST | `/documents` | `{ title, description, type, fileUrl, categoryIds }` | User |
 | PUT | `/documents/{id}` | `{ title?, description?, categoryIds? }` | Owner |
 | DELETE | `/documents/{id}` | - | Owner |
-
-## Categories
-| Method | Endpoint | Body | Auth |
-|--------|----------|------|------|
-| GET | `/categories` | - | - |
-| POST | `/categories` | `{ name }` | Admin |
-| PUT | `/categories/{id}` | `{ name }` | Admin |
-| DELETE | `/categories/{id}` | - | Admin |
 
 ## Reading Lists
 | Method | Endpoint | Body | Auth |
@@ -42,9 +33,3 @@ Base URL: `/api`
 | DELETE | `/reading-lists/{id}` | - | Owner |
 | POST | `/reading-lists/{id}/items` | `{ documentId }` | Owner |
 | DELETE | `/reading-lists/{id}/items/{docId}` | - | Owner |
-
-## Errors
-```json
-{ "error": "Not Found", "message": "Document not found", "status": 404 }
-```
-`400` Bad Request | `401` Unauthorized | `403` Forbidden | `404` Not Found | `409` Conflict
