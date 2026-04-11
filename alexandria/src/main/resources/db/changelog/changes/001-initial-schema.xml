@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001" author="alexandria">
+
+        <createTable tableName="users">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="email" type="varchar(255)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="password" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_name" type="varchar(255)"/>
+            <column name="created_at" type="timestamp"/>
+        </createTable>
+
+        <createTable tableName="documents">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_url" type="varchar(255)"/>
+            <column name="author_id" type="integer"/>
+            <column name="created_at" type="timestamp"/>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="documents"
+                baseColumnNames="author_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_documents_author"/>
+
+        <createTable tableName="categories">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="document_categories">
+            <column name="document_id" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="integer">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+                tableName="document_categories"
+                columnNames="document_id, category_id"
+                constraintName="pk_document_categories"/>
+
+        <addForeignKeyConstraint
+                baseTableName="document_categories"
+                baseColumnNames="document_id"
+                referencedTableName="documents"
+                referencedColumnNames="id"
+                constraintName="fk_doc_categories_document"/>
+
+        <addForeignKeyConstraint
+                baseTableName="document_categories"
+                baseColumnNames="category_id"
+                referencedTableName="categories"
+                referencedColumnNames="id"
+                constraintName="fk_doc_categories_category"/>
+
+        <createTable tableName="reading_lists">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="integer"/>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="reading_lists"
+                baseColumnNames="user_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_reading_lists_user"/>
+
+        <createTable tableName="reading_list_items">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="list_id" type="integer"/>
+            <column name="document_id" type="integer"/>
+            <column name="added_at" type="timestamp"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="reading_list_items"
+                baseColumnNames="list_id"
+                referencedTableName="reading_lists"
+                referencedColumnNames="id"
+                constraintName="fk_reading_list_items_list"/>
+
+        <addForeignKeyConstraint
+                baseTableName="reading_list_items"
+                baseColumnNames="document_id"
+                referencedTableName="documents"
+                referencedColumnNames="id"
+                constraintName="fk_reading_list_items_document"/>
+
+    </changeSet>
+
+</databaseChangeLog>
