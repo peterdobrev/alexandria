@@ -1,14 +1,24 @@
 package com.alexandria.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "document_categories")
 public class DocumentCategory {
 
     @EmbeddedId
+    @EqualsAndHashCode.Include
     private DocumentCategoryId id;
 
     @ManyToOne

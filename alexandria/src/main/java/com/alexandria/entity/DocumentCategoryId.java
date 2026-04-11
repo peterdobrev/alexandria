@@ -2,16 +2,21 @@ package com.alexandria.entity;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.io.Serializable;
+import java.util.UUID;
 
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
 public class DocumentCategoryId implements Serializable {
 
-    private Integer documentId;
-    private Integer categoryId;
+    private UUID documentId;
+    private UUID categoryId;
 }
