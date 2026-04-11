@@ -8,7 +8,7 @@
         <version>4.0.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.web_java</groupId>
+    <groupId>com.alexandria</groupId>
     <artifactId>Alexandria</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Alexandria</name>
