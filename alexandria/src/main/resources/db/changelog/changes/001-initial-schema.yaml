@@ -1,0 +1,184 @@
+databaseChangeLog:
+  - changeSet:
+      id: "001"
+      author: alexandria
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_name
+                  type: varchar(255)
+              - column:
+                  name: created_at
+                  type: timestamptz
+
+        - createTable:
+            tableName: documents
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: file_url
+                  type: varchar(255)
+              - column:
+                  name: author_id
+                  type: uuid
+              - column:
+                  name: created_at
+                  type: timestamptz
+              - column:
+                  name: updated_at
+                  type: timestamptz
+
+        - addForeignKeyConstraint:
+            baseTableName: documents
+            baseColumnNames: author_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_documents_author
+
+        - createTable:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: document_categories
+            columns:
+              - column:
+                  name: document_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: document_categories
+            columnNames: document_id, category_id
+            constraintName: pk_document_categories
+
+        - addForeignKeyConstraint:
+            baseTableName: document_categories
+            baseColumnNames: document_id
+            referencedTableName: documents
+            referencedColumnNames: id
+            constraintName: fk_doc_categories_document
+
+        - addForeignKeyConstraint:
+            baseTableName: document_categories
+            baseColumnNames: category_id
+            referencedTableName: categories
+            referencedColumnNames: id
+            constraintName: fk_doc_categories_category
+
+        - createTable:
+            tableName: reading_lists
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+
+        - addForeignKeyConstraint:
+            baseTableName: reading_lists
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_reading_lists_user
+
+        - createTable:
+            tableName: reading_list_items
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: list_id
+                  type: uuid
+              - column:
+                  name: document_id
+                  type: uuid
+              - column:
+                  name: added_at
+                  type: timestamptz
+
+        - addForeignKeyConstraint:
+            baseTableName: reading_list_items
+            baseColumnNames: list_id
+            referencedTableName: reading_lists
+            referencedColumnNames: id
+            constraintName: fk_reading_list_items_list
+
+        - addForeignKeyConstraint:
+            baseTableName: reading_list_items
+            baseColumnNames: document_id
+            referencedTableName: documents
+            referencedColumnNames: id
+            constraintName: fk_reading_list_items_document
