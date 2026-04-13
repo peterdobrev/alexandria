@@ -14,7 +14,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: email
-                  type: varchar(255)
+                  type: varchar(320)
                   constraints:
                     unique: true
                     nullable: false
@@ -71,6 +71,7 @@ databaseChangeLog:
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_documents_author
+            onDelete: SET NULL
 
         - createTable:
             tableName: categories
@@ -86,6 +87,7 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                     nullable: false
+                    unique: true
 
         - createTable:
             tableName: document_categories
@@ -112,6 +114,7 @@ databaseChangeLog:
             referencedTableName: documents
             referencedColumnNames: id
             constraintName: fk_doc_categories_document
+            onDelete: CASCADE
 
         - addForeignKeyConstraint:
             baseTableName: document_categories
@@ -119,6 +122,7 @@ databaseChangeLog:
             referencedTableName: categories
             referencedColumnNames: id
             constraintName: fk_doc_categories_category
+            onDelete: SET NULL
 
         - createTable:
             tableName: reading_lists
@@ -149,6 +153,7 @@ databaseChangeLog:
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_reading_lists_user
+            onDelete: CASCADE
 
         - createTable:
             tableName: reading_list_items
@@ -162,9 +167,13 @@ databaseChangeLog:
               - column:
                   name: list_id
                   type: uuid
+                  constraints:
+                    nullable: false
               - column:
                   name: document_id
                   type: uuid
+                  constraints:
+                    nullable: false
               - column:
                   name: added_at
                   type: timestamptz
@@ -175,6 +184,7 @@ databaseChangeLog:
             referencedTableName: reading_lists
             referencedColumnNames: id
             constraintName: fk_reading_list_items_list
+            onDelete: CASCADE
 
         - addForeignKeyConstraint:
             baseTableName: reading_list_items
@@ -182,3 +192,4 @@ databaseChangeLog:
             referencedTableName: documents
             referencedColumnNames: id
             constraintName: fk_reading_list_items_document
+            onDelete: CASCADE
