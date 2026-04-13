@@ -6,19 +6,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "document_categories")
 public class DocumentCategory {
 
     @EmbeddedId
-    @EqualsAndHashCode.Include
     private DocumentCategoryId id;
 
     @ManyToOne
