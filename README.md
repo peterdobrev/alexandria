@@ -5,3 +5,4 @@ A digital library platform for uploading, organizing, and discovering books, art
 ## Documentation
 
 - [Database Schema](docs/database-schema.md)
+- [REST API](docs/rest-api.md)
