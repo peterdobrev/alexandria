@@ -2,6 +2,7 @@
 
 A digital library platform for uploading, organizing, and discovering books, articles, and research materials.
 
-## Database Schema
+## Documentation
 
-![Database Schema](alexandria-db.svg?raw=true)
+- [Database Schema](docs/database-schema.md)
+- [REST API](docs/rest-api.md)
