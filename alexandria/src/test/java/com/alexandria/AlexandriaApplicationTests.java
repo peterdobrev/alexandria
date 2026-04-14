@@ -1,4 +1,4 @@
-package com.web_java.alexandria;
+package com.alexandria;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
