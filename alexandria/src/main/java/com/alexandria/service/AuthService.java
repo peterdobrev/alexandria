@@ -5,7 +5,7 @@ import com.alexandria.dto.LoginRequest;
 import com.alexandria.dto.RegisterRequest;
 import com.alexandria.entity.Role;
 import com.alexandria.entity.User;
-import com.alexandria.entity.UserRole;
+import com.alexandria.exception.EmailAlreadyInUseException;
 import com.alexandria.mapper.UserMapper;
 import com.alexandria.repository.RoleRepository;
 import com.alexandria.repository.UserRepository;
@@ -28,7 +28,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new EmailAlreadyInUseException(request.email());
         }
 
         User user = userMapper.toUser(request);
