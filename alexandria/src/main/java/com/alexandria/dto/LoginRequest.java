@@ -1,12 +1,14 @@
 package com.alexandria.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
-@Getter
-@Setter
-public class LoginRequest {
+public record LoginRequest(
 
-    private String email;
-    private String password;
-}
+        @NotBlank(message = "Email is required")
+        @Email(message = "Email must be valid")
+        String email,
+
+        @NotBlank(message = "Password is required")
+        String password
+) {}
