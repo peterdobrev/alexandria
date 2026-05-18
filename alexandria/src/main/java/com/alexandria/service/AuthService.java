@@ -6,7 +6,7 @@ import com.alexandria.dto.RegisterRequest;
 import com.alexandria.entity.Role;
 import com.alexandria.entity.User;
 import com.alexandria.entity.UserRole;
-import com.alexandria.entity.UserRoleId;
+import com.alexandria.mapper.UserMapper;
 import com.alexandria.repository.RoleRepository;
 import com.alexandria.repository.UserRepository;
 import com.alexandria.security.JwtService;
@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -25,26 +24,19 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Email already in use");
         }
 
-        User user = new User();
-        user.setEmail(request.email());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setDisplayName(request.displayName());
-        user.setCreatedAt(Instant.now());
+        User user = userMapper.toUser(request);
 
         Role role = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new IllegalStateException("Default role not found"));
 
-        UserRole userRole = new UserRole();
-        userRole.setId(new UserRoleId(null, role.getName()));
-        userRole.setUser(user);
-        userRole.setRole(role);
-        user.setUserRoles(List.of(userRole));
+        user.setUserRoles(List.of(userMapper.toUserRole(user, role)));
 
         userRepository.save(user);
 
