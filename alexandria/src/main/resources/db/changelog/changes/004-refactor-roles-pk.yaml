@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: "004"
+      author: alexandria
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: user_roles
+            constraintName: fk_user_roles_role
+
+        - dropPrimaryKey:
+            tableName: user_roles
+            constraintName: pk_user_roles
+
+        - dropColumn:
+            tableName: user_roles
+            columnName: role_id
+
+        - dropPrimaryKey:
+            tableName: roles
+            constraintName: roles_pkey
+
+        - dropColumn:
+            tableName: roles
+            columnName: id
+
+        - addPrimaryKey:
+            tableName: roles
+            columnNames: name
+            constraintName: pk_roles
+
+        - addColumn:
+            tableName: user_roles
+            columns:
+              - column:
+                  name: role_name
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: user_roles
+            columnNames: user_id, role_name
+            constraintName: pk_user_roles
+
+        - addForeignKeyConstraint:
+            baseTableName: user_roles
+            baseColumnNames: role_name
+            referencedTableName: roles
+            referencedColumnNames: name
+            constraintName: fk_user_roles_role
+            onDelete: CASCADE

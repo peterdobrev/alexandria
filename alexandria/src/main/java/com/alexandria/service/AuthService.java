@@ -41,7 +41,7 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalStateException("Default role not found"));
 
         UserRole userRole = new UserRole();
-        userRole.setId(new UserRoleId(null, role.getId()));
+        userRole.setId(new UserRoleId(null, role.getName()));
         userRole.setUser(user);
         userRole.setRole(role);
         user.setUserRoles(List.of(userRole));
