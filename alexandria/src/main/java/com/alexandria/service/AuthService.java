@@ -11,12 +11,11 @@ import com.alexandria.repository.RoleRepository;
 import com.alexandria.repository.UserRepository;
 import com.alexandria.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -27,18 +26,15 @@ public class AuthService {
     private final UserMapper userMapper;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyInUseException(request.email());
-        }
-
         User user = userMapper.toUser(request);
-
-        Role role = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new IllegalStateException("Default role not found"));
-
+        Role role = roleRepository.getReferenceById("ROLE_USER");
         user.setUserRoles(List.of(userMapper.toUserRole(user, role)));
 
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new EmailAlreadyInUseException(request.email());
+        }
 
         return new AuthResponse(jwtService.generateToken(user));
     }
