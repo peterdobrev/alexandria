@@ -1,6 +1,7 @@
 package com.alexandria.mapper;
 
 import com.alexandria.dto.RegisterRequest;
+import com.alexandria.dto.UserResponse;
 import com.alexandria.entity.Role;
 import com.alexandria.entity.User;
 import com.alexandria.entity.UserRole;
@@ -21,6 +22,10 @@ public class UserMapper {
         user.setDisplayName(request.displayName());
         user.setCreatedAt(Instant.now());
         return user;
+    }
+
+    public UserResponse toResponse(User user) {
+        return new UserResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getCreatedAt());
     }
 
     public UserRole toUserRole(User user, Role role) {
