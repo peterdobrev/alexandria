@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/002-add-roles.yaml
   - include:
       file: db/changelog/changes/003-seed-roles.yaml
+  - include:
+      file: db/changelog/changes/005-seed-categories.yaml

@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: "005"
+      author: alexandria
+      changes:
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: name
+                  value: Science
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: name
+                  value: History
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: name
+                  value: Technology
