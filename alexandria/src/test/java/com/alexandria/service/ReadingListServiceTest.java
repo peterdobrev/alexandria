@@ -43,16 +43,20 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ReadingListServiceTest {
 
-    @Mock private ReadingListRepository readingListRepository;
-    @Mock private ReadingListItemRepository readingListItemRepository;
-    @Mock private DocumentRepository documentRepository;
-    @Mock private ReadingListMapper readingListMapper;
+    @Mock
+    private ReadingListRepository readingListRepository;
+    @Mock
+    private ReadingListItemRepository readingListItemRepository;
+    @Mock
+    private DocumentRepository documentRepository;
+    @Mock
+    private ReadingListMapper readingListMapper;
 
-    private ReadingListService readingListService;
+    private ReadingListService classUnderTest;
 
     @BeforeEach
     void setUp() {
-        readingListService = new ReadingListService(
+        classUnderTest = new ReadingListService(
                 readingListRepository, readingListItemRepository, documentRepository, readingListMapper);
     }
 
@@ -66,7 +70,7 @@ class ReadingListServiceTest {
         when(readingListRepository.findByUserId(currentUser.getId(), Pageable.unpaged())).thenReturn(page);
         when(readingListMapper.toSummaryResponse(list)).thenReturn(summary);
 
-        Page<ReadingListSummaryResponse> result = readingListService.getReadingLists(currentUser, Pageable.unpaged());
+        Page<ReadingListSummaryResponse> result = classUnderTest.getReadingLists(currentUser, Pageable.unpaged());
 
         assertThat(result.getContent()).containsExactly(summary);
     }
@@ -81,7 +85,7 @@ class ReadingListServiceTest {
         when(readingListRepository.save(any(ReadingList.class))).thenReturn(saved);
         when(readingListMapper.toResponse(saved)).thenReturn(response);
 
-        assertThat(readingListService.createReadingList(request, currentUser)).isEqualTo(response);
+        assertThat(classUnderTest.createReadingList(request, currentUser)).isEqualTo(response);
         verify(readingListRepository).save(any(ReadingList.class));
     }
 
@@ -95,7 +99,7 @@ class ReadingListServiceTest {
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
         when(readingListMapper.toResponse(list)).thenReturn(response);
 
-        assertThat(readingListService.getReadingList(listId, currentUser)).isEqualTo(response);
+        assertThat(classUnderTest.getReadingList(listId, currentUser)).isEqualTo(response);
     }
 
     @Test
@@ -107,7 +111,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
 
-        assertThatThrownBy(() -> readingListService.getReadingList(listId, currentUser))
+        assertThatThrownBy(() -> classUnderTest.getReadingList(listId, currentUser))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -123,7 +127,7 @@ class ReadingListServiceTest {
         when(readingListRepository.save(list)).thenReturn(list);
         when(readingListMapper.toResponse(list)).thenReturn(response);
 
-        assertThat(readingListService.updateReadingList(listId, request, currentUser)).isEqualTo(response);
+        assertThat(classUnderTest.updateReadingList(listId, request, currentUser)).isEqualTo(response);
         assertThat(list.getName()).isEqualTo("Updated Name");
     }
 
@@ -136,7 +140,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
 
-        assertThatThrownBy(() -> readingListService.updateReadingList(listId, new UpdateReadingListRequest("Name"), currentUser))
+        assertThatThrownBy(() -> classUnderTest.updateReadingList(listId, new UpdateReadingListRequest("Name"), currentUser))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -148,7 +152,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
 
-        readingListService.deleteReadingList(listId, currentUser);
+        classUnderTest.deleteReadingList(listId, currentUser);
 
         verify(readingListRepository).delete(list);
     }
@@ -162,7 +166,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
 
-        assertThatThrownBy(() -> readingListService.deleteReadingList(listId, currentUser))
+        assertThatThrownBy(() -> classUnderTest.deleteReadingList(listId, currentUser))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -185,7 +189,7 @@ class ReadingListServiceTest {
         when(readingListItemRepository.save(any(ReadingListItem.class))).thenReturn(savedItem);
         when(readingListMapper.toItemResponse(savedItem)).thenReturn(itemResponse);
 
-        assertThat(readingListService.addItem(listId, new AddReadingListItemRequest(docId), currentUser))
+        assertThat(classUnderTest.addItem(listId, new AddReadingListItemRequest(docId), currentUser))
                 .isEqualTo(itemResponse);
         verify(readingListItemRepository).save(any(ReadingListItem.class));
     }
@@ -200,7 +204,7 @@ class ReadingListServiceTest {
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
         when(documentRepository.findById(docId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> readingListService.addItem(listId, new AddReadingListItemRequest(docId), currentUser))
+        assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId), currentUser))
                 .isInstanceOf(DocumentNotFoundException.class);
     }
 
@@ -215,7 +219,7 @@ class ReadingListServiceTest {
         when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
         when(readingListItemRepository.findByReadingListIdAndDocumentId(listId, docId)).thenReturn(Optional.of(item));
 
-        readingListService.removeItem(listId, docId, currentUser);
+        classUnderTest.removeItem(listId, docId, currentUser);
 
         verify(readingListItemRepository).delete(item);
     }
@@ -227,7 +231,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(listId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> readingListService.removeItem(listId, UUID.randomUUID(), currentUser))
+        assertThatThrownBy(() -> classUnderTest.removeItem(listId, UUID.randomUUID(), currentUser))
                 .isInstanceOf(ReadingListNotFoundException.class);
     }
 

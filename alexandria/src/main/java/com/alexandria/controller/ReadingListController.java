@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -38,10 +39,10 @@ public class ReadingListController {
         return ResponseEntity.ok(readingListService.getReadingLists(securityUtils.getCurrentUser(), pageable));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public ResponseEntity<ReadingListResponse> createReadingList(@Valid @RequestBody CreateReadingListRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(readingListService.createReadingList(request, securityUtils.getCurrentUser()));
+    public ReadingListResponse createReadingList(@Valid @RequestBody CreateReadingListRequest request) {
+        return readingListService.createReadingList(request, securityUtils.getCurrentUser());
     }
 
     @GetMapping("/{id}")
@@ -61,11 +62,11 @@ public class ReadingListController {
         return ResponseEntity.noContent().build();
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{id}/items")
-    public ResponseEntity<ReadingListItemResponse> addItem(@PathVariable UUID id,
-                                                            @Valid @RequestBody AddReadingListItemRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(readingListService.addItem(id, request, securityUtils.getCurrentUser()));
+    public ReadingListItemResponse addItem(@PathVariable UUID id,
+                                           @Valid @RequestBody AddReadingListItemRequest request) {
+        return readingListService.addItem(id, request, securityUtils.getCurrentUser());
     }
 
     @DeleteMapping("/{id}/items/{docId}")

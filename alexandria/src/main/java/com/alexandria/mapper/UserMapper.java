@@ -30,7 +30,7 @@ public class UserMapper {
 
     public UserRole toUserRole(User user, Role role) {
         UserRole userRole = new UserRole();
-        userRole.setId(new UserRoleId(null, role.getId()));
+        userRole.setId(new UserRoleId(null, role.getName()));
         userRole.setUser(user);
         userRole.setRole(role);
         return userRole;

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -29,15 +30,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
-    @Mock UserService userService;
-    @Mock SecurityUtils securityUtils;
+    @Mock
+    private UserService userService;
+    @Mock
+    private SecurityUtils securityUtils;
+
+    @InjectMocks
+    private UserController classUnderTest;
 
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService, securityUtils)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(classUnderTest).build();
     }
 
     @Test

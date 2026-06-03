@@ -12,6 +12,7 @@ import com.alexandria.service.ReadingListService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -39,13 +40,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class ReadingListControllerTest {
 
-    @Mock ReadingListService readingListService;
-    @Mock SecurityUtils securityUtils;
+    @Mock
+    private ReadingListService readingListService;
+    @Mock
+    private SecurityUtils securityUtils;
+
+    @InjectMocks
+    private ReadingListController classUnderTest;
 
     private MockMvc mockMvc;
+
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new ReadingListController(readingListService, securityUtils))
+        mockMvc = MockMvcBuilders.standaloneSetup(classUnderTest)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }

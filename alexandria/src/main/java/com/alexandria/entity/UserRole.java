@@ -24,7 +24,7 @@ public class UserRole {
     private User user;
 
     @ManyToOne
-    @MapsId("roleId")
-    @JoinColumn(name = "role_id")
+    @MapsId("roleName")
+    @JoinColumn(name = "role_name")
     private Role role;
 }

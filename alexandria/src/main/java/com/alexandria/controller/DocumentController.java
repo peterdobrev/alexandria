@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -47,10 +48,10 @@ public class DocumentController {
         return ResponseEntity.ok(documentService.getDocument(id));
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public ResponseEntity<DocumentResponse> createDocument(@Valid @RequestBody CreateDocumentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(documentService.createDocument(request, securityUtils.getCurrentUser()));
+    public DocumentResponse createDocument(@Valid @RequestBody CreateDocumentRequest request) {
+        return documentService.createDocument(request, securityUtils.getCurrentUser());
     }
 
     @PutMapping("/{id}")

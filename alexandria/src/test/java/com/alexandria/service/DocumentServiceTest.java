@@ -36,15 +36,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
 
-    @Mock private DocumentRepository documentRepository;
-    @Mock private CategoryRepository categoryRepository;
-    @Mock private DocumentMapper documentMapper;
+    @Mock
+    private DocumentRepository documentRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
+    @Mock
+    private DocumentMapper documentMapper;
 
-    private DocumentService documentService;
+    private DocumentService classUnderTest;
 
     @BeforeEach
     void setUp() {
-        documentService = new DocumentService(documentRepository, categoryRepository, documentMapper);
+        classUnderTest = new DocumentService(documentRepository, categoryRepository, documentMapper);
     }
 
     @Test
@@ -56,7 +59,7 @@ class DocumentServiceTest {
         when(documentRepository.findWithFilters(null, null, null, null, Pageable.unpaged())).thenReturn(page);
         when(documentMapper.toSummaryResponse(doc)).thenReturn(summary);
 
-        Page<DocumentSummaryResponse> result = documentService.getDocuments(null, null, null, null, Pageable.unpaged());
+        Page<DocumentSummaryResponse> result = classUnderTest.getDocuments(null, null, null, null, Pageable.unpaged());
 
         assertThat(result.getContent()).containsExactly(summary);
     }
@@ -70,7 +73,7 @@ class DocumentServiceTest {
         when(documentRepository.findById(id)).thenReturn(Optional.of(doc));
         when(documentMapper.toResponse(doc)).thenReturn(response);
 
-        assertThat(documentService.getDocument(id)).isEqualTo(response);
+        assertThat(classUnderTest.getDocument(id)).isEqualTo(response);
     }
 
     @Test
@@ -78,7 +81,7 @@ class DocumentServiceTest {
         UUID id = UUID.randomUUID();
         when(documentRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> documentService.getDocument(id))
+        assertThatThrownBy(() -> classUnderTest.getDocument(id))
                 .isInstanceOf(DocumentNotFoundException.class);
     }
 
@@ -93,7 +96,7 @@ class DocumentServiceTest {
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
         when(documentMapper.toResponse(saved)).thenReturn(response);
 
-        assertThat(documentService.createDocument(request, author)).isEqualTo(response);
+        assertThat(classUnderTest.createDocument(request, author)).isEqualTo(response);
         verify(documentRepository).save(any(Document.class));
     }
 
@@ -112,7 +115,7 @@ class DocumentServiceTest {
         when(documentRepository.save(doc)).thenReturn(doc);
         when(documentMapper.toResponse(doc)).thenReturn(response);
 
-        assertThat(documentService.updateDocument(id, request, owner)).isEqualTo(response);
+        assertThat(classUnderTest.updateDocument(id, request, owner)).isEqualTo(response);
         assertThat(doc.getTitle()).isEqualTo("New Title");
     }
 
@@ -128,7 +131,7 @@ class DocumentServiceTest {
 
         when(documentRepository.findById(id)).thenReturn(Optional.of(doc));
 
-        assertThatThrownBy(() -> documentService.updateDocument(id, new UpdateDocumentRequest(null, null, null), otherUser))
+        assertThatThrownBy(() -> classUnderTest.updateDocument(id, new UpdateDocumentRequest(null, null, null), otherUser))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -142,7 +145,7 @@ class DocumentServiceTest {
 
         when(documentRepository.findById(id)).thenReturn(Optional.of(doc));
 
-        documentService.deleteDocument(id, owner);
+        classUnderTest.deleteDocument(id, owner);
 
         verify(documentRepository).delete(doc);
     }
@@ -159,7 +162,7 @@ class DocumentServiceTest {
 
         when(documentRepository.findById(id)).thenReturn(Optional.of(doc));
 
-        assertThatThrownBy(() -> documentService.deleteDocument(id, otherUser))
+        assertThatThrownBy(() -> classUnderTest.deleteDocument(id, otherUser))
                 .isInstanceOf(ForbiddenException.class);
     }
 

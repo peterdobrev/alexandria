@@ -26,15 +26,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private UserMapper userMapper;
-    @Mock private PasswordEncoder passwordEncoder;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
-    private UserService userService;
+    private UserService classUnderTest;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userMapper, passwordEncoder);
+        classUnderTest = new UserService(userRepository, userMapper, passwordEncoder);
     }
 
     @Test
@@ -46,7 +49,7 @@ class UserServiceTest {
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(userMapper.toResponse(user)).thenReturn(response);
 
-        assertThat(userService.getUser(id)).isEqualTo(response);
+        assertThat(classUnderTest.getUser(id)).isEqualTo(response);
     }
 
     @Test
@@ -54,7 +57,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         when(userRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.getUser(id))
+        assertThatThrownBy(() -> classUnderTest.getUser(id))
                 .isInstanceOf(UserNotFoundException.class);
     }
 
@@ -72,7 +75,7 @@ class UserServiceTest {
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toResponse(user)).thenReturn(response);
 
-        assertThat(userService.updateUser(id, request, currentUser)).isEqualTo(response);
+        assertThat(classUnderTest.updateUser(id, request, currentUser)).isEqualTo(response);
         assertThat(user.getDisplayName()).isEqualTo("New Name");
     }
 
@@ -83,7 +86,7 @@ class UserServiceTest {
         currentUser.setId(UUID.randomUUID());
         UpdateUserRequest request = new UpdateUserRequest("New Name", null);
 
-        assertThatThrownBy(() -> userService.updateUser(id, request, currentUser))
+        assertThatThrownBy(() -> classUnderTest.updateUser(id, request, currentUser))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -101,7 +104,7 @@ class UserServiceTest {
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toResponse(user)).thenReturn(new UserResponse(id, "test@test.com", null, Instant.now()));
 
-        userService.updateUser(id, request, currentUser);
+        classUnderTest.updateUser(id, request, currentUser);
 
         assertThat(user.getPasswordHash()).isEqualTo("encoded-password");
         verify(passwordEncoder).encode("newpassword");

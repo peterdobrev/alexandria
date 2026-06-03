@@ -11,6 +11,7 @@ import com.alexandria.service.DocumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -38,13 +39,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class DocumentControllerTest {
 
-    @Mock DocumentService documentService;
-    @Mock SecurityUtils securityUtils;
+    @Mock
+    private DocumentService documentService;
+    @Mock
+    private SecurityUtils securityUtils;
+
+    @InjectMocks
+    private DocumentController classUnderTest;
 
     private MockMvc mockMvc;
+
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new DocumentController(documentService, securityUtils))
+        mockMvc = MockMvcBuilders.standaloneSetup(classUnderTest)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
