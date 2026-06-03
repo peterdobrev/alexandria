@@ -18,5 +18,5 @@ import java.util.UUID;
 public class UserRoleId implements Serializable {
 
     private UUID userId;
-    private String roleName;
+    private UUID roleId;
 }
