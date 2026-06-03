@@ -29,7 +29,8 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         User user = userMapper.toUser(request);
-        Role role = roleRepository.getReferenceById("ROLE_USER");
+        Role role = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("ROLE_USER not found"));
         user.setUserRoles(List.of(userMapper.toUserRole(user, role)));
 
         try {

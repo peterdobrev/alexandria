@@ -56,7 +56,7 @@ class AuthServiceTest {
         UserRole userRole = new UserRole();
 
         when(userMapper.toUser(request)).thenReturn(user);
-        when(roleRepository.getReferenceById("ROLE_USER")).thenReturn(role);
+        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(role));
         when(userMapper.toUserRole(user, role)).thenReturn(userRole);
         when(jwtService.generateToken(user)).thenReturn("jwt-token");
 
@@ -72,7 +72,7 @@ class AuthServiceTest {
         User user = new User();
 
         when(userMapper.toUser(request)).thenReturn(user);
-        when(roleRepository.getReferenceById("ROLE_USER")).thenReturn(new Role());
+        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(new Role()));
         when(userMapper.toUserRole(any(), any())).thenReturn(new UserRole());
         doThrow(new DataIntegrityViolationException("duplicate")).when(userRepository).save(any());
 
