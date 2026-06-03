@@ -7,10 +7,8 @@ import com.alexandria.entity.UserRole;
 import com.alexandria.entity.UserRoleId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import java.time.Instant;
 
-@Component
 @RequiredArgsConstructor
 public class UserMapper {
 

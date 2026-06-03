@@ -24,11 +24,11 @@ class UserDetailsServiceImplTest {
 
     @Mock private UserRepository userRepository;
 
-    private UserDetailsServiceImpl userDetailsService;
+    private UserDetailsServiceImpl classUnderTest;
 
     @BeforeEach
     void setUp() {
-        userDetailsService = new UserDetailsServiceImpl(userRepository);
+        classUnderTest = new UserDetailsServiceImpl(userRepository);
     }
 
     @Test
@@ -46,7 +46,7 @@ class UserDetailsServiceImplTest {
 
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername("user@test.com");
+        UserDetails userDetails = classUnderTest.loadUserByUsername("user@test.com");
 
         assertThat(userDetails.getUsername()).isEqualTo("user@test.com");
         assertThat(userDetails.getPassword()).isEqualTo("hashed-password");
@@ -59,7 +59,7 @@ class UserDetailsServiceImplTest {
     void loadUserByUsername_nonExistentUser_throwsUsernameNotFoundException() {
         when(userRepository.findByEmail("nobody@test.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userDetailsService.loadUserByUsername("nobody@test.com"))
+        assertThatThrownBy(() -> classUnderTest.loadUserByUsername("nobody@test.com"))
                 .isInstanceOf(UsernameNotFoundException.class);
     }
 }

@@ -11,11 +11,13 @@ import com.alexandria.repository.RoleRepository;
 import com.alexandria.repository.UserRepository;
 import com.alexandria.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -33,6 +35,7 @@ public class AuthService {
         try {
             userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
+            log.warn("Registration attempt with already-used email: {}", request.email());
             throw new EmailAlreadyInUseException(request.email());
         }
 

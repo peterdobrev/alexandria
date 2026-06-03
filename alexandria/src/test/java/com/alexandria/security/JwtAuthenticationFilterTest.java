@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -26,18 +27,23 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
-    @Mock private JwtService jwtService;
-    @Mock private UserDetailsServiceImpl userDetailsService;
-    @Mock private FilterChain filterChain;
-    @Mock private Claims claims;
+    @Mock
+    private JwtService jwtService;
+    @Mock
+    private UserDetailsServiceImpl userDetailsService;
+    @Mock
+    private FilterChain filterChain;
+    @Mock
+    private Claims claims;
 
-    private JwtAuthenticationFilter filter;
+    @InjectMocks
+    private JwtAuthenticationFilter classUnderTest;
+
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
 
     @BeforeEach
     void setUp() {
-        filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         SecurityContextHolder.clearContext();
@@ -50,7 +56,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void doFilterInternal_noAuthorizationHeader_continuesChainWithoutAuthentication() throws ServletException, IOException {
-        filter.doFilterInternal(request, response, filterChain);
+        classUnderTest.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
         verifyNoInteractions(jwtService);
@@ -61,7 +67,7 @@ class JwtAuthenticationFilterTest {
     void doFilterInternal_nonBearerHeader_continuesChainWithoutAuthentication() throws ServletException, IOException {
         request.addHeader("Authorization", "Basic dXNlcjpwYXNz");
 
-        filter.doFilterInternal(request, response, filterChain);
+        classUnderTest.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
         verifyNoInteractions(jwtService);
@@ -76,7 +82,7 @@ class JwtAuthenticationFilterTest {
         when(claims.getSubject()).thenReturn("user@test.com");
         when(userDetailsService.loadUserByUsername("user@test.com")).thenReturn(userDetails);
 
-        filter.doFilterInternal(request, response, filterChain);
+        classUnderTest.doFilterInternal(request, response, filterChain);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
@@ -89,7 +95,7 @@ class JwtAuthenticationFilterTest {
         request.addHeader("Authorization", "Bearer invalid-token");
         when(jwtService.extractClaims("invalid-token")).thenThrow(JwtException.class);
 
-        filter.doFilterInternal(request, response, filterChain);
+        classUnderTest.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -103,7 +109,7 @@ class JwtAuthenticationFilterTest {
         when(claims.getSubject()).thenReturn("ghost@test.com");
         when(userDetailsService.loadUserByUsername("ghost@test.com")).thenThrow(UsernameNotFoundException.class);
 
-        filter.doFilterInternal(request, response, filterChain);
+        classUnderTest.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();

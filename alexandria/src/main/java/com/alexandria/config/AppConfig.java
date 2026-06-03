@@ -18,7 +18,6 @@ public class AppConfig {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.secret}")
@@ -26,6 +25,11 @@ public class AppConfig {
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
+
+    @Bean
+    public UserMapper userMapper() {
+        return new UserMapper(passwordEncoder);
+    }
 
     @Bean
     public JwtService jwtService() {
@@ -39,6 +43,6 @@ public class AppConfig {
 
     @Bean
     public AuthService authService() {
-        return new AuthService(userRepository, roleRepository, passwordEncoder, jwtService(), userMapper);
+        return new AuthService(userRepository, roleRepository, passwordEncoder, jwtService(), userMapper());
     }
 }

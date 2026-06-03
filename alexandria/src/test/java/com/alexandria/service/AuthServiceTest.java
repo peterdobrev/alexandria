@@ -36,11 +36,11 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private UserMapper userMapper;
 
-    private AuthService authService;
+    private AuthService classUnderTest;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, roleRepository, passwordEncoder, jwtService, userMapper);
+        classUnderTest = new AuthService(userRepository, roleRepository, passwordEncoder, jwtService, userMapper);
     }
 
     @Test
@@ -55,7 +55,7 @@ class AuthServiceTest {
         when(userMapper.toUserRole(user, role)).thenReturn(userRole);
         when(jwtService.generateToken(user)).thenReturn("jwt-token");
 
-        AuthResponse response = authService.register(request);
+        AuthResponse response = classUnderTest.register(request);
 
         assertThat(response.token()).isEqualTo("jwt-token");
         verify(userRepository).save(user);
@@ -71,7 +71,7 @@ class AuthServiceTest {
         when(userMapper.toUserRole(any(), any())).thenReturn(new UserRole());
         doThrow(new DataIntegrityViolationException("duplicate")).when(userRepository).save(any());
 
-        assertThatThrownBy(() -> authService.register(request))
+        assertThatThrownBy(() -> classUnderTest.register(request))
                 .isInstanceOf(EmailAlreadyInUseException.class)
                 .hasMessageContaining("existing@test.com");
     }
@@ -86,7 +86,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches("password123", "hashed-password")).thenReturn(true);
         when(jwtService.generateToken(user)).thenReturn("jwt-token");
 
-        AuthResponse response = authService.login(request);
+        AuthResponse response = classUnderTest.login(request);
 
         assertThat(response.token()).isEqualTo("jwt-token");
     }
@@ -96,7 +96,7 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest("nobody@test.com", "password123");
         when(userRepository.findByEmail("nobody@test.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.login(request))
+        assertThatThrownBy(() -> classUnderTest.login(request))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
@@ -109,7 +109,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong-password", "hashed-password")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(request))
+        assertThatThrownBy(() -> classUnderTest.login(request))
                 .isInstanceOf(BadCredentialsException.class);
     }
 }
