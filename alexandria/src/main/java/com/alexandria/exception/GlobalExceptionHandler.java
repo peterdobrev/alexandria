@@ -24,36 +24,60 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
+
         log.warn("Validation failed on {}: {}", request.getRequestURI(), message);
-        return ResponseEntity.badRequest().body(new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(), "Bad Request", message, Instant.now(), request.getRequestURI()
-        ));
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                message, Instant.now(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(EmailAlreadyInUseException.class)
     public ResponseEntity<ErrorResponse> handleEmailAlreadyInUse(EmailAlreadyInUseException ex,
                                                                   HttpServletRequest request) {
         log.warn("Email already in use on {}: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
-                HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage(), Instant.now(), request.getRequestURI()
-        ));
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                Instant.now(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex,
                                                                HttpServletRequest request) {
         log.warn("Bad credentials on {}: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(), "Unauthorized", ex.getMessage(), Instant.now(), request.getRequestURI()
-        ));
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                ex.getMessage(),
+                Instant.now(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex,
+                                                       HttpServletRequest request) {
         log.error("Unexpected error on {}: {}", request.getRequestURI(), ex.getMessage(), ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", "An unexpected error occurred",
-                Instant.now(), request.getRequestURI()
-        ));
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "An unexpected error occurred",
+                Instant.now(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }
