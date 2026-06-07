@@ -4,10 +4,12 @@ import com.alexandria.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@Slf4j
 public class JwtService {
 
     private final SecretKey secretKey;
@@ -19,6 +21,7 @@ public class JwtService {
     }
 
     public String generateToken(User user) {
+        log.debug("Generating JWT token for user: {}", user.getEmail());
         return Jwts.builder()
                 .subject(user.getEmail())
                 .issuedAt(new Date())
@@ -28,6 +31,7 @@ public class JwtService {
     }
 
     public Claims extractClaims(String token) {
+        log.debug("Extracting claims from JWT token");
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()

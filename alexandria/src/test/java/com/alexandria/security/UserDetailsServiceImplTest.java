@@ -22,6 +22,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UserDetailsServiceImplTest {
 
+    private static final String TEST_EMAIL = "user@test.com";
+    private static final String HASHED_PASSWORD = "hashed-password";
+    private static final String ROLE_USER = "ROLE_USER";
+
     @Mock
     private UserRepository userRepository;
 
@@ -35,25 +39,25 @@ class UserDetailsServiceImplTest {
     @Test
     void loadUserByUsername_existingUser_returnsCorrectUserDetails() {
         Role role = new Role();
-        role.setName("ROLE_USER");
+        role.setName(ROLE_USER);
 
         UserRole userRole = new UserRole();
         userRole.setRole(role);
 
         User user = new User();
-        user.setEmail("user@test.com");
-        user.setPasswordHash("hashed-password");
+        user.setEmail(TEST_EMAIL);
+        user.setPasswordHash(HASHED_PASSWORD);
         user.setUserRoles(List.of(userRole));
 
-        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
-        UserDetails userDetails = classUnderTest.loadUserByUsername("user@test.com");
+        UserDetails userDetails = classUnderTest.loadUserByUsername(TEST_EMAIL);
 
-        assertThat(userDetails.getUsername()).isEqualTo("user@test.com");
-        assertThat(userDetails.getPassword()).isEqualTo("hashed-password");
+        assertThat(userDetails.getUsername()).isEqualTo(TEST_EMAIL);
+        assertThat(userDetails.getPassword()).isEqualTo(HASHED_PASSWORD);
         assertThat(userDetails.getAuthorities())
                 .extracting("authority")
-                .containsExactly("ROLE_USER");
+                .containsExactly(ROLE_USER);
     }
 
     @Test
