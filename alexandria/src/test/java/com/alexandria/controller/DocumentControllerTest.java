@@ -146,7 +146,7 @@ class DocumentControllerTest {
     }
 
     @Test
-    void delete_authenticatedNonAdmin_returns204AndCallsServiceWithIsAdminFalse() throws Exception {
+    void delete_authenticatedNonAdmin_returns204() throws Exception {
         UUID id = UUID.randomUUID();
         UserDetails principal = new org.springframework.security.core.userdetails.User(
                 "a@b.com", "pw", List.of(new SimpleGrantedAuthority("ROLE_USER")));
@@ -156,9 +156,7 @@ class DocumentControllerTest {
         mockMvc.perform(delete("/api/documents/" + id))
                 .andExpect(status().isNoContent());
 
-        ArgumentCaptor<Boolean> isAdminCaptor = ArgumentCaptor.forClass(Boolean.class);
-        verify(documentService).delete(eq(id), isAdminCaptor.capture());
-        assertThat(isAdminCaptor.getValue()).isFalse();
+        verify(documentService).delete(id);
     }
 
     private DocumentSummary documentSummary() {

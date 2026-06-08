@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -56,7 +57,7 @@ public class DocumentController {
             Pageable pageable,
             @AuthenticationPrincipal UserDetails principal) {
         validateSort(pageable.getSort());
-        UUID currentUserId = currentUserId(principal);
+        UUID currentUserId = currentUserId(principal).orElse(null);
         DocumentService.DocumentFilters filters =
                 new DocumentService.DocumentFilters(type, categoryId, authorId, search);
         return documentService.list(filters, pageable, currentUserId);
@@ -65,7 +66,7 @@ public class DocumentController {
     @GetMapping("/{id}")
     public DocumentDetail get(@PathVariable UUID id,
                               @AuthenticationPrincipal UserDetails principal) {
-        UUID currentUserId = currentUserId(principal);
+        UUID currentUserId = currentUserId(principal).orElse(null);
         return documentService.get(id, currentUserId);
     }
 
@@ -101,17 +102,14 @@ public class DocumentController {
     @PreAuthorize("@ownership.isDocumentOwner(#id, principal) or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id,
-                       @AuthenticationPrincipal UserDetails principal) {
-        boolean isAdmin = principal != null && principal.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        documentService.delete(id, isAdmin);
+    public void delete(@PathVariable UUID id) {
+        documentService.delete(id);
     }
 
     @GetMapping("/{id}/file")
     public ResponseEntity<Resource> streamFile(@PathVariable UUID id,
                                                @AuthenticationPrincipal UserDetails principal) {
-        UUID currentUserId = currentUserId(principal);
+        UUID currentUserId = currentUserId(principal).orElse(null);
         DocumentService.StoredFileResource sfr = documentService.streamFile(id, currentUserId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(sfr.contentType()))
@@ -121,11 +119,11 @@ public class DocumentController {
                 .body(sfr.resource());
     }
 
-    private UUID currentUserId(UserDetails principal) {
+    private Optional<UUID> currentUserId(UserDetails principal) {
         if (principal == null) {
-            return null;
+            return Optional.empty();
         }
-        return securityUtils.getCurrentUser().getId();
+        return Optional.of(securityUtils.getCurrentUser().getId());
     }
 
     private void validateSort(Sort sort) {

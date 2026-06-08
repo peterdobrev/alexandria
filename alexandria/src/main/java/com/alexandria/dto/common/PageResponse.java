@@ -13,14 +13,14 @@ public record PageResponse<T>(
         boolean last
 ) {
 
-    public static <T> PageResponse<T> of(Page<T> page) {
+    public static <T> PageResponse<T> of(Page<T> springPage) {
         return new PageResponse<>(
-                page.getContent(),
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages(),
-                page.isLast()
+                springPage.getContent(),
+                springPage.getNumber(),
+                springPage.getSize(),
+                springPage.getTotalElements(),
+                springPage.getTotalPages(),
+                springPage.isLast()
         );
     }
 }
