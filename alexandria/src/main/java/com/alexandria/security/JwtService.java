@@ -31,7 +31,6 @@ public class JwtService {
     }
 
     public Claims extractClaims(String token) {
-        log.debug("Extracting claims from JWT token");
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()

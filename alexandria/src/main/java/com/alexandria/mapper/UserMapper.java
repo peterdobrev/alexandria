@@ -5,19 +5,15 @@ import com.alexandria.entity.Role;
 import com.alexandria.entity.User;
 import com.alexandria.entity.UserRole;
 import com.alexandria.entity.UserRoleId;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.time.Instant;
 
-@RequiredArgsConstructor
 public class UserMapper {
 
-    private final PasswordEncoder passwordEncoder;
-
-    public User toUser(RegisterRequest request) {
+    public User toUser(RegisterRequest request, String encodedPassword) {
         User user = new User();
         user.setEmail(request.email());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setPasswordHash(encodedPassword);
         user.setDisplayName(request.displayName());
         user.setCreatedAt(Instant.now());
         return user;

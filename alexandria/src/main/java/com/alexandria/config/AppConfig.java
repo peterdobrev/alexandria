@@ -28,7 +28,7 @@ public class AppConfig {
 
     @Bean
     public UserMapper userMapper() {
-        return new UserMapper(passwordEncoder);
+        return new UserMapper();
     }
 
     @Bean
