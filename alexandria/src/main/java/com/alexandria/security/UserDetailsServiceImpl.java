@@ -2,6 +2,7 @@ package com.alexandria.security;
 
 import com.alexandria.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -17,6 +19,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.debug("Loading user by username: {}", username);
         return userRepository.findByEmail(username) //username and email are the same thing in our system.
                 .map(user -> {
                     List<SimpleGrantedAuthority> authorities = user.getUserRoles().stream()
@@ -29,6 +32,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                             authorities
                     );
                 })
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> {
+                    log.warn("User not found for username: {}", username);
+                    return new UsernameNotFoundException("User not found: " + username);
+                });
     }
 }

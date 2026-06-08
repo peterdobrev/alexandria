@@ -30,6 +30,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
+    private static final String TEST_EMAIL = "user@test.com";
+    private static final String TEST_PASSWORD = "password123";
+    private static final String HASHED_PASSWORD = "hashed-password";
+    private static final String JWT_TOKEN = "jwt-token";
+    private static final String ROLE_USER = "ROLE_USER";
+
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -50,29 +56,29 @@ class AuthServiceTest {
 
     @Test
     void register_validRequest_savesUserAndReturnsToken() {
-        RegisterRequest request = new RegisterRequest("user@test.com", "password123", "Test User");
+        RegisterRequest request = new RegisterRequest(TEST_EMAIL, TEST_PASSWORD, "Test User");
         User user = new User();
         Role role = new Role();
         UserRole userRole = new UserRole();
 
         when(userMapper.toUser(request)).thenReturn(user);
-        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(role));
+        when(roleRepository.findByName(ROLE_USER)).thenReturn(Optional.of(role));
         when(userMapper.toUserRole(user, role)).thenReturn(userRole);
-        when(jwtService.generateToken(user)).thenReturn("jwt-token");
+        when(jwtService.generateToken(user)).thenReturn(JWT_TOKEN);
 
         AuthResponse response = classUnderTest.register(request);
 
-        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.token()).isEqualTo(JWT_TOKEN);
         verify(userRepository).save(user);
     }
 
     @Test
     void register_duplicateEmail_throwsEmailAlreadyInUseException() {
-        RegisterRequest request = new RegisterRequest("existing@test.com", "password123", "Test User");
+        RegisterRequest request = new RegisterRequest("existing@test.com", TEST_PASSWORD, "Test User");
         User user = new User();
 
         when(userMapper.toUser(request)).thenReturn(user);
-        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(new Role()));
+        when(roleRepository.findByName(ROLE_USER)).thenReturn(Optional.of(new Role()));
         when(userMapper.toUserRole(any(), any())).thenReturn(new UserRole());
         doThrow(new DataIntegrityViolationException("duplicate")).when(userRepository).save(any());
 
@@ -83,22 +89,22 @@ class AuthServiceTest {
 
     @Test
     void login_validCredentials_returnsToken() {
-        LoginRequest request = new LoginRequest("user@test.com", "password123");
+        LoginRequest request = new LoginRequest(TEST_EMAIL, TEST_PASSWORD);
         User user = new User();
-        user.setPasswordHash("hashed-password");
+        user.setPasswordHash(HASHED_PASSWORD);
 
-        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "hashed-password")).thenReturn(true);
-        when(jwtService.generateToken(user)).thenReturn("jwt-token");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(TEST_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
+        when(jwtService.generateToken(user)).thenReturn(JWT_TOKEN);
 
         AuthResponse response = classUnderTest.login(request);
 
-        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.token()).isEqualTo(JWT_TOKEN);
     }
 
     @Test
     void login_userNotFound_throwsBadCredentialsException() {
-        LoginRequest request = new LoginRequest("nobody@test.com", "password123");
+        LoginRequest request = new LoginRequest("nobody@test.com", TEST_PASSWORD);
         when(userRepository.findByEmail("nobody@test.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.login(request))
@@ -107,12 +113,12 @@ class AuthServiceTest {
 
     @Test
     void login_wrongPassword_throwsBadCredentialsException() {
-        LoginRequest request = new LoginRequest("user@test.com", "wrong-password");
+        LoginRequest request = new LoginRequest(TEST_EMAIL, "wrong-password");
         User user = new User();
-        user.setPasswordHash("hashed-password");
+        user.setPasswordHash(HASHED_PASSWORD);
 
-        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("wrong-password", "hashed-password")).thenReturn(false);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong-password", HASHED_PASSWORD)).thenReturn(false);
 
         assertThatThrownBy(() -> classUnderTest.login(request))
                 .isInstanceOf(BadCredentialsException.class);
