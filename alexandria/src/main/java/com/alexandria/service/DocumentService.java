@@ -114,7 +114,7 @@ public class DocumentService {
         return documentMapper.toDetail(saved);
     }
 
-    public void delete(UUID id, boolean isAdmin) {
+    public void delete(UUID id) {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
         final String path = document.getUploadedFilePath();
@@ -147,12 +147,23 @@ public class DocumentService {
 
     @Transactional(readOnly = true)
     public PageResponse<DocumentSummary> list(DocumentFilters filters, Pageable pageable, UUID currentUserId) {
-        Specification<Document> spec = Specification
-                .where(DocumentSpecifications.hasType(filters.type()))
-                .and(DocumentSpecifications.hasCategory(filters.categoryId()))
-                .and(DocumentSpecifications.hasAuthor(filters.authorId()))
-                .and(DocumentSpecifications.titleContains(filters.search()))
-                .and(DocumentSpecifications.isVisible(currentUserId));
+        Specification<Document> visibilitySpec = currentUserId == null
+                ? DocumentSpecifications.isPublic()
+                : DocumentSpecifications.isVisibleToUser(currentUserId);
+        Specification<Document> spec = Specification.where(visibilitySpec);
+
+        if (filters.type() != null) {
+            spec = spec.and(DocumentSpecifications.hasType(filters.type()));
+        }
+        if (filters.categoryId() != null) {
+            spec = spec.and(DocumentSpecifications.hasCategory(filters.categoryId()));
+        }
+        if (filters.authorId() != null) {
+            spec = spec.and(DocumentSpecifications.hasAuthor(filters.authorId()));
+        }
+        if (filters.search() != null && !filters.search().isBlank()) {
+            spec = spec.and(DocumentSpecifications.titleContains(filters.search()));
+        }
 
         Page<Document> page = documentRepository.findAll(spec, pageable);
         Page<DocumentSummary> mapped = page.map(documentMapper::toSummary);
