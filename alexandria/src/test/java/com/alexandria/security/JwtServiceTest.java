@@ -3,6 +3,7 @@ package com.alexandria.security;
 import com.alexandria.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.security.WeakKeyException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,5 +44,11 @@ class JwtServiceTest {
     void extractClaims_tamperedToken_throwsJwtException() {
         assertThatThrownBy(() -> classUnderTest.extractClaims("tampered.token.value"))
                 .isInstanceOf(JwtException.class);
+    }
+
+    @Test
+    void constructor_shortSecret_throwsWeakKeyException() {
+        assertThatThrownBy(() -> new JwtService("too-short", EXPIRATION_MS))
+                .isInstanceOf(WeakKeyException.class);
     }
 }

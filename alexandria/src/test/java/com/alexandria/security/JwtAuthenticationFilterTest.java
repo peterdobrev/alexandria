@@ -11,11 +11,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.io.IOException;
@@ -27,10 +29,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
+    private static final String VALID_TOKEN = "valid-token";
+    private static final String INVALID_TOKEN = "invalid-token";
+    private static final String TEST_EMAIL = "user@test.com";
+
     @Mock
     private JwtService jwtService;
     @Mock
-    private UserDetailsServiceImpl userDetailsService;
+    private UserDetailsService userDetailsService;
     @Mock
     private FilterChain filterChain;
     @Mock
@@ -65,7 +71,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void doFilterInternal_nonBearerHeader_continuesChainWithoutAuthentication() throws ServletException, IOException {
-        request.addHeader("Authorization", "Basic dXNlcjpwYXNz");
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz");
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
@@ -74,26 +80,36 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void doFilterInternal_validToken_setsAuthenticationInSecurityContext() throws ServletException, IOException {
-        request.addHeader("Authorization", "Bearer valid-token");
-        UserDetails userDetails = new User("user@test.com", "hashed", List.of());
+    void doFilterInternal_emptyBearerToken_continuesChainWithoutAuthentication() throws ServletException, IOException {
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer ");
 
-        when(jwtService.extractClaims("valid-token")).thenReturn(claims);
-        when(claims.getSubject()).thenReturn("user@test.com");
-        when(userDetailsService.loadUserByUsername("user@test.com")).thenReturn(userDetails);
+        classUnderTest.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        verifyNoInteractions(jwtService);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void doFilterInternal_validToken_setsAuthenticationInSecurityContext() throws ServletException, IOException {
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN);
+        UserDetails userDetails = new User(TEST_EMAIL, "hashed", List.of());
+
+        when(jwtService.extractClaims(VALID_TOKEN)).thenReturn(claims);
+        when(claims.getSubject()).thenReturn(TEST_EMAIL);
+        when(userDetailsService.loadUserByUsername(TEST_EMAIL)).thenReturn(userDetails);
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
-        assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
-                .isEqualTo("user@test.com");
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo(TEST_EMAIL);
         verify(filterChain).doFilter(request, response);
     }
 
     @Test
     void doFilterInternal_invalidToken_continuesChainWithoutAuthentication() throws ServletException, IOException {
-        request.addHeader("Authorization", "Bearer invalid-token");
-        when(jwtService.extractClaims("invalid-token")).thenThrow(JwtException.class);
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + INVALID_TOKEN);
+        when(jwtService.extractClaims(INVALID_TOKEN)).thenThrow(JwtException.class);
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
@@ -103,9 +119,9 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void doFilterInternal_userNotFound_continuesChainWithoutAuthentication() throws ServletException, IOException {
-        request.addHeader("Authorization", "Bearer valid-token");
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN);
 
-        when(jwtService.extractClaims("valid-token")).thenReturn(claims);
+        when(jwtService.extractClaims(VALID_TOKEN)).thenReturn(claims);
         when(claims.getSubject()).thenReturn("ghost@test.com");
         when(userDetailsService.loadUserByUsername("ghost@test.com")).thenThrow(UsernameNotFoundException.class);
 

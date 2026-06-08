@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserDetailsServiceImplTest {
+
+    private static final String TEST_EMAIL = "user@test.com";
+    private static final String HASHED_PASSWORD = "hashed-password";
 
     @Mock
     private UserRepository userRepository;
@@ -35,25 +39,65 @@ class UserDetailsServiceImplTest {
     @Test
     void loadUserByUsername_existingUser_returnsCorrectUserDetails() {
         Role role = new Role();
-        role.setName("ROLE_USER");
+        role.setName(RoleNames.USER);
 
         UserRole userRole = new UserRole();
         userRole.setRole(role);
 
         User user = new User();
-        user.setEmail("user@test.com");
-        user.setPasswordHash("hashed-password");
+        user.setEmail(TEST_EMAIL);
+        user.setPasswordHash(HASHED_PASSWORD);
         user.setUserRoles(List.of(userRole));
 
-        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
-        UserDetails userDetails = classUnderTest.loadUserByUsername("user@test.com");
+        UserDetails userDetails = classUnderTest.loadUserByUsername(TEST_EMAIL);
 
-        assertThat(userDetails.getUsername()).isEqualTo("user@test.com");
-        assertThat(userDetails.getPassword()).isEqualTo("hashed-password");
+        assertThat(userDetails.getUsername()).isEqualTo(TEST_EMAIL);
+        assertThat(userDetails.getPassword()).isEqualTo(HASHED_PASSWORD);
         assertThat(userDetails.getAuthorities())
                 .extracting("authority")
-                .containsExactly("ROLE_USER");
+                .containsExactly(RoleNames.USER);
+    }
+
+    @Test
+    void loadUserByUsername_userWithMultipleRoles_returnsAllAuthorities() {
+        Role userRoleEntity = new Role();
+        userRoleEntity.setName(RoleNames.USER);
+        Role adminRoleEntity = new Role();
+        adminRoleEntity.setName(RoleNames.ADMIN);
+
+        UserRole link1 = new UserRole();
+        link1.setRole(userRoleEntity);
+        UserRole link2 = new UserRole();
+        link2.setRole(adminRoleEntity);
+
+        User user = new User();
+        user.setEmail(TEST_EMAIL);
+        user.setPasswordHash(HASHED_PASSWORD);
+        user.setUserRoles(List.of(link1, link2));
+
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        UserDetails userDetails = classUnderTest.loadUserByUsername(TEST_EMAIL);
+
+        assertThat(userDetails.getAuthorities())
+                .extracting("authority")
+                .containsExactlyInAnyOrder(RoleNames.USER, RoleNames.ADMIN);
+    }
+
+    @Test
+    void loadUserByUsername_userWithNoRoles_returnsEmptyAuthorities() {
+        User user = new User();
+        user.setEmail(TEST_EMAIL);
+        user.setPasswordHash(HASHED_PASSWORD);
+        user.setUserRoles(Collections.emptyList());
+
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        UserDetails userDetails = classUnderTest.loadUserByUsername(TEST_EMAIL);
+
+        assertThat(userDetails.getAuthorities()).isEmpty();
     }
 
     @Test
