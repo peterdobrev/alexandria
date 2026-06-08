@@ -1,12 +1,14 @@
 package com.alexandria.controller;
 
 import com.alexandria.dto.AddReadingListItemRequest;
-import com.alexandria.dto.DocumentSummaryResponse;
 import com.alexandria.dto.ReadingListItemResponse;
 import com.alexandria.dto.ReadingListResponse;
 import com.alexandria.dto.ReadingListSummaryResponse;
-import com.alexandria.dto.UserResponse;
+import com.alexandria.dto.document.AuthorSummary;
+import com.alexandria.dto.document.CategorySummary;
+import com.alexandria.dto.document.DocumentSummary;
 import com.alexandria.entity.User;
+import com.alexandria.entity.Visibility;
 import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.ReadingListService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,11 +22,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -53,21 +57,25 @@ class ReadingListControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(classUnderTest)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(
+                        new PageableHandlerMethodArgumentResolver(),
+                        new AuthenticationPrincipalArgumentResolver())
                 .build();
     }
 
     @Test
-    void getReadingLists_returns200() throws Exception {
+    void getReadingLists_returns200WithPagedContent() throws Exception {
         User currentUser = new User();
-        ReadingListSummaryResponse summary = new ReadingListSummaryResponse(UUID.randomUUID(), "My List", Instant.now());
+        ReadingListSummaryResponse summary = new ReadingListSummaryResponse(
+                UUID.randomUUID(), "My List", Instant.now());
 
         when(securityUtils.getCurrentUser()).thenReturn(currentUser);
         when(readingListService.getReadingLists(any(User.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(summary), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/reading-lists"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("My List"));
     }
 
     @Test
@@ -79,8 +87,8 @@ class ReadingListControllerTest {
         when(readingListService.createReadingList(any(), any(User.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/reading-lists")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"My List\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"My List\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("My List"));
     }
@@ -88,19 +96,17 @@ class ReadingListControllerTest {
     @Test
     void createReadingList_blankName_returns400() throws Exception {
         mockMvc.perform(post("/api/reading-lists")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getReadingList_returns200() throws Exception {
         UUID id = UUID.randomUUID();
-        User currentUser = new User();
         ReadingListResponse response = readingListResponse();
 
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(readingListService.getReadingList(eq(id), any(User.class))).thenReturn(response);
+        when(readingListService.getReadingList(eq(id))).thenReturn(response);
 
         mockMvc.perform(get("/api/reading-lists/" + id))
                 .andExpect(status().isOk())
@@ -110,24 +116,20 @@ class ReadingListControllerTest {
     @Test
     void updateReadingList_validRequest_returns200() throws Exception {
         UUID id = UUID.randomUUID();
-        User currentUser = new User();
-        ReadingListResponse response = readingListResponse();
+        ReadingListResponse response = new ReadingListResponse(id, "Updated List", Instant.now(), List.of());
 
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(readingListService.updateReadingList(eq(id), any(), any(User.class))).thenReturn(response);
+        when(readingListService.updateReadingList(eq(id), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/reading-lists/" + id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Updated List\"}"))
-                .andExpect(status().isOk());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Updated List\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated List"));
     }
 
     @Test
     void deleteReadingList_returns204() throws Exception {
         UUID id = UUID.randomUUID();
-        User currentUser = new User();
-
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
 
         mockMvc.perform(delete("/api/reading-lists/" + id))
                 .andExpect(status().isNoContent());
@@ -137,20 +139,30 @@ class ReadingListControllerTest {
     void addItem_validRequest_returns201() throws Exception {
         UUID listId = UUID.randomUUID();
         UUID docId = UUID.randomUUID();
-        User currentUser = new User();
-        ReadingListItemResponse itemResponse = new ReadingListItemResponse(UUID.randomUUID(),
-                new DocumentSummaryResponse(docId, "Title", "PDF",
-                        new UserResponse(UUID.randomUUID(), "a@test.com", "Author", Instant.now()),
-                        List.of(), Instant.now()),
-                Instant.now());
+        DocumentSummary documentSummary = new DocumentSummary(
+                docId,
+                "Title",
+                "A description",
+                "PDF",
+                Visibility.PUBLIC,
+                new AuthorSummary(UUID.randomUUID(), "Author"),
+                Set.<CategorySummary>of(),
+                true,
+                false,
+                123L,
+                "application/pdf",
+                Instant.now(),
+                Instant.now()
+        );
+        ReadingListItemResponse itemResponse = new ReadingListItemResponse(
+                UUID.randomUUID(), documentSummary, Instant.now());
 
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(readingListService.addItem(eq(listId), any(AddReadingListItemRequest.class), any(User.class)))
+        when(readingListService.addItem(eq(listId), any(AddReadingListItemRequest.class)))
                 .thenReturn(itemResponse);
 
         mockMvc.perform(post("/api/reading-lists/" + listId + "/items")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"documentId\":\"" + docId + "\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"documentId\":\"" + docId + "\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.document.title").value("Title"));
     }
@@ -159,9 +171,6 @@ class ReadingListControllerTest {
     void removeItem_returns204() throws Exception {
         UUID listId = UUID.randomUUID();
         UUID docId = UUID.randomUUID();
-        User currentUser = new User();
-
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
 
         mockMvc.perform(delete("/api/reading-lists/" + listId + "/items/" + docId))
                 .andExpect(status().isNoContent());
