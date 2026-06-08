@@ -30,7 +30,7 @@ public class ReadingListMapper {
     public ReadingListItemResponse toItemResponse(ReadingListItem item) {
         return new ReadingListItemResponse(
                 item.getId(),
-                documentMapper.toSummaryResponse(item.getDocument()),
+                documentMapper.toSummary(item.getDocument()),
                 item.getAddedAt()
         );
     }
