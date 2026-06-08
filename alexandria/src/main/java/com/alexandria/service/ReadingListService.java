@@ -11,9 +11,8 @@ import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.ReadingListItem;
 import com.alexandria.entity.User;
 import com.alexandria.exception.DocumentNotFoundException;
-import com.alexandria.exception.ForbiddenException;
+import com.alexandria.exception.ReadingListItemNotFoundException;
 import com.alexandria.exception.ReadingListNotFoundException;
-import com.alexandria.exception.ResourceNotFoundException;
 import com.alexandria.mapper.ReadingListMapper;
 import com.alexandria.repository.DocumentRepository;
 import com.alexandria.repository.ReadingListItemRepository;
@@ -54,40 +53,28 @@ public class ReadingListService {
     }
 
     @Transactional(readOnly = true)
-    public ReadingListResponse getReadingList(UUID id, User currentUser) {
+    public ReadingListResponse getReadingList(UUID id) {
         ReadingList list = readingListRepository.findById(id)
                 .orElseThrow(() -> new ReadingListNotFoundException(id));
-        if (!list.getUser().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to access this reading list");
-        }
         return readingListMapper.toResponse(list);
     }
 
-    public ReadingListResponse updateReadingList(UUID id, UpdateReadingListRequest request, User currentUser) {
+    public ReadingListResponse updateReadingList(UUID id, UpdateReadingListRequest request) {
         ReadingList list = readingListRepository.findById(id)
                 .orElseThrow(() -> new ReadingListNotFoundException(id));
-        if (!list.getUser().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to update this reading list");
-        }
         list.setName(request.name());
         return readingListMapper.toResponse(readingListRepository.save(list));
     }
 
-    public void deleteReadingList(UUID id, User currentUser) {
+    public void deleteReadingList(UUID id) {
         ReadingList list = readingListRepository.findById(id)
                 .orElseThrow(() -> new ReadingListNotFoundException(id));
-        if (!list.getUser().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to delete this reading list");
-        }
         readingListRepository.delete(list);
     }
 
-    public ReadingListItemResponse addItem(UUID listId, AddReadingListItemRequest request, User currentUser) {
+    public ReadingListItemResponse addItem(UUID listId, AddReadingListItemRequest request) {
         ReadingList list = readingListRepository.findById(listId)
                 .orElseThrow(() -> new ReadingListNotFoundException(listId));
-        if (!list.getUser().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to modify this reading list");
-        }
         Document document = documentRepository.findById(request.documentId())
                 .orElseThrow(() -> new DocumentNotFoundException(request.documentId()));
         ReadingListItem item = new ReadingListItem();
@@ -97,14 +84,11 @@ public class ReadingListService {
         return readingListMapper.toItemResponse(readingListItemRepository.save(item));
     }
 
-    public void removeItem(UUID listId, UUID docId, User currentUser) {
-        ReadingList list = readingListRepository.findById(listId)
+    public void removeItem(UUID listId, UUID docId) {
+        readingListRepository.findById(listId)
                 .orElseThrow(() -> new ReadingListNotFoundException(listId));
-        if (!list.getUser().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to modify this reading list");
-        }
         ReadingListItem item = readingListItemRepository.findByReadingListIdAndDocumentId(listId, docId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item not found in reading list"));
+                .orElseThrow(() -> new ReadingListItemNotFoundException(listId, docId));
         readingListItemRepository.delete(item);
     }
 }
