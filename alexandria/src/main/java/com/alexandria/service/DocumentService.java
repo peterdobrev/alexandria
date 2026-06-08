@@ -169,6 +169,9 @@ public class DocumentService {
                 && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {
             throw new DocumentNotFoundException(id);
         }
+        if (document.getUploadedFilePath() == null) {
+            throw new DocumentNotFoundException(id);
+        }
         Resource resource = fileStorage.load(document.getUploadedFilePath());
         long size = document.getSizeBytes() != null ? document.getSizeBytes() : 0L;
         return new StoredFileResource(resource, document.getContentType(), document.getOriginalFilename(), size);
