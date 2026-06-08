@@ -10,11 +10,9 @@ import com.alexandria.repository.UserRepository;
 import com.alexandria.security.RoleNames;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("ownership")
 @RequiredArgsConstructor
 public class OwnershipService {
 
