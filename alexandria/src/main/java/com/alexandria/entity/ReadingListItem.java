@@ -31,6 +31,6 @@ public class ReadingListItem {
     @JoinColumn(name = "document_id", nullable = false)
     private Document document;
 
-    @Column(name = "added_at")
+    @Column(name = "added_at", nullable = false)
     private Instant addedAt;
 }

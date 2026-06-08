@@ -33,7 +33,7 @@ public class ReadingList {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @OneToMany(mappedBy = "readingList", cascade = CascadeType.ALL, orphanRemoval = true)
