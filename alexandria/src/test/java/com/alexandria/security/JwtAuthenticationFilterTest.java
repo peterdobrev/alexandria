@@ -107,18 +107,19 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void doFilterInternal_invalidToken_continuesChainWithoutAuthentication() throws ServletException, IOException {
+    void doFilterInternal_invalidToken_returns401WithoutContinuingChain() throws ServletException, IOException {
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + INVALID_TOKEN);
         when(jwtService.extractClaims(INVALID_TOKEN)).thenThrow(JwtException.class);
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(401);
+        verify(filterChain, never()).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
-    void doFilterInternal_userNotFound_continuesChainWithoutAuthentication() throws ServletException, IOException {
+    void doFilterInternal_userNotFound_returns401WithoutContinuingChain() throws ServletException, IOException {
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN);
 
         when(jwtService.extractClaims(VALID_TOKEN)).thenReturn(claims);
@@ -127,7 +128,8 @@ class JwtAuthenticationFilterTest {
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(401);
+        verify(filterChain, never()).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 }

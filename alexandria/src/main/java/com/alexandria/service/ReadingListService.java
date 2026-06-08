@@ -11,6 +11,7 @@ import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.ReadingListItem;
 import com.alexandria.entity.User;
 import com.alexandria.exception.DocumentNotFoundException;
+import com.alexandria.exception.ReadingListItemAlreadyExistsException;
 import com.alexandria.exception.ReadingListItemNotFoundException;
 import com.alexandria.exception.ReadingListNotFoundException;
 import com.alexandria.mapper.ReadingListMapper;
@@ -77,6 +78,9 @@ public class ReadingListService {
                 .orElseThrow(() -> new ReadingListNotFoundException(listId));
         Document document = documentRepository.findById(request.documentId())
                 .orElseThrow(() -> new DocumentNotFoundException(request.documentId()));
+        if (readingListItemRepository.findByReadingListIdAndDocumentId(listId, request.documentId()).isPresent()) {
+            throw new ReadingListItemAlreadyExistsException(listId, request.documentId());
+        }
         ReadingListItem item = new ReadingListItem();
         item.setReadingList(list);
         item.setDocument(document);

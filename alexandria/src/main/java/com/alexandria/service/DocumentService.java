@@ -63,7 +63,7 @@ public class DocumentService {
         document.setTitle(meta.title());
         document.setDescription(meta.description());
         document.setType(meta.type());
-        document.setUploadedFilePath(storedFile.path());
+        document.setUploadedFilePath(storedFile.relativePath());
         document.setOriginalFilename(storedFile.originalFilename());
         document.setContentType(storedFile.contentType());
         document.setSizeBytes(storedFile.sizeBytes());
@@ -167,6 +167,9 @@ public class DocumentService {
                 .orElseThrow(() -> new DocumentNotFoundException(id));
         if (document.getVisibility() == Visibility.PRIVATE
                 && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {
+            throw new DocumentNotFoundException(id);
+        }
+        if (document.getUploadedFilePath() == null) {
             throw new DocumentNotFoundException(id);
         }
         Resource resource = fileStorage.load(document.getUploadedFilePath());

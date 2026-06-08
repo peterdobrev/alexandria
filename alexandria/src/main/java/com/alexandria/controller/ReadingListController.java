@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,10 +41,14 @@ public class ReadingListController {
         return ResponseEntity.ok(readingListService.getReadingLists(securityUtils.getCurrentUser(), pageable));
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public ReadingListResponse createReadingList(@Valid @RequestBody CreateReadingListRequest request) {
-        return readingListService.createReadingList(request, securityUtils.getCurrentUser());
+    public ResponseEntity<ReadingListResponse> createReadingList(@Valid @RequestBody CreateReadingListRequest request) {
+        ReadingListResponse response = readingListService.createReadingList(request, securityUtils.getCurrentUser());
+        java.net.URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+        return ResponseEntity.created(location).body(response);
     }
 
     @PreAuthorize("@ownership.isReadingListOwner(#id, principal)")
