@@ -6,4 +6,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/003-seed-roles.yaml
   - include:
-      file: db/changelog/changes/004-seed-categories.yaml
+      file: db/changelog/changes/004-extend-documents.yaml
+  - include:
+      file: db/changelog/changes/005-seed-categories.yaml
+  - include:
+      file: db/changelog/changes/006-fix-document-categories-fk.yaml
