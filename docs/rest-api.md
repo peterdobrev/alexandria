@@ -1,35 +1,33 @@
 # Alexandria REST API
 
-Base URL: `/api`
+Live, interactive docs: **`/swagger-ui.html`** (when the app is running)
+OpenAPI JSON: **`/v3/api-docs`**
 
-## Auth
-| Method | Endpoint | Body | Auth |
-|--------|----------|------|------|
-| POST | `/auth/register` | `{ email, password, displayName }` | - |
-| POST | `/auth/login` | `{ email, password }` | - |
+This page lists endpoint groups; for request/response details see Swagger.
 
-## Users
-| Method | Endpoint | Body | Auth |
-|--------|----------|------|------|
-| GET | `/users/{id}` | - | - |
-| PUT | `/users/{id}` | `{ displayName?, password? }` | Owner |
+## Auth (Phase 0)
+- POST /api/auth/register
+- POST /api/auth/login
 
-## Documents
-| Method | Endpoint | Body / Params | Auth |
-|--------|----------|---------------|------|
-| GET | `/documents` | `?type=&category=&author=&search=` | - |
-| GET | `/documents/{id}` | - | - |
-| POST | `/documents` | `{ title, description, type, fileUrl, categoryIds }` | User |
-| PUT | `/documents/{id}` | `{ title?, description?, categoryIds? }` | Owner |
-| DELETE | `/documents/{id}` | - | Owner |
+## Users (Phase 1, minimal)
+- GET  /api/users/{id}
+- PUT  /api/users/{id}                        Owner
 
-## Reading Lists
-| Method | Endpoint | Body | Auth |
-|--------|----------|------|------|
-| GET | `/reading-lists` | - | User |
-| POST | `/reading-lists` | `{ name }` | User |
-| GET | `/reading-lists/{id}` | - | Owner |
-| PUT | `/reading-lists/{id}` | `{ name }` | Owner |
-| DELETE | `/reading-lists/{id}` | - | Owner |
-| POST | `/reading-lists/{id}/items` | `{ documentId }` | Owner |
-| DELETE | `/reading-lists/{id}/items/{docId}` | - | Owner |
+## Documents (Phase 1)
+- GET    /api/documents                       Public
+- GET    /api/documents/{id}                  Visibility-aware
+- GET    /api/documents/{id}/file             Visibility-aware
+- POST   /api/documents       multipart       Auth
+- POST   /api/documents/article  JSON         Auth
+- PUT    /api/documents/{id}                  Owner
+- DELETE /api/documents/{id}                  Owner | Admin
+
+## Categories (Phase 1)
+- GET    /api/categories                      Public
+- POST   /api/categories                      Admin
+- PUT    /api/categories/{id}                 Admin
+- DELETE /api/categories/{id}                 Admin
+
+## Reading Lists (Phase 2 — see sub-spec)
+## Annotations (Phase 4 — see sub-spec)
+## Recommendations (Phase 5 — see sub-spec)

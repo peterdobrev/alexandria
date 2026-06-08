@@ -3,12 +3,16 @@ package com.alexandria.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,6 +42,25 @@ public class Document {
     @Column(name = "file_url")
     private String fileUrl;
 
+    @Column(name = "uploaded_file_path", length = 512)
+    private String uploadedFilePath;
+
+    @Column(name = "original_filename")
+    private String originalFilename;
+
+    @Column(name = "content_type", length = 100)
+    private String contentType;
+
+    @Column(name = "size_bytes")
+    private Long sizeBytes;
+
+    @Column(columnDefinition = "text")
+    private String body;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Visibility visibility = Visibility.PUBLIC;
+
     @ManyToOne
     @JoinColumn(name = "author_id")
     private User author;
@@ -53,4 +76,19 @@ public class Document {
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReadingListItem> readingListItems;
+
+    @PrePersist
+    void onCreate() {
+        Instant now = Instant.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+        if (this.visibility == null) {
+            this.visibility = Visibility.PUBLIC;
+        }
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }

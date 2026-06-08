@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: "004"
+      author: alexandria
+      changes:
+        - addColumn:
+            tableName: documents
+            columns:
+              - column:
+                  name: uploaded_file_path
+                  type: varchar(512)
+              - column:
+                  name: original_filename
+                  type: varchar(255)
+              - column:
+                  name: content_type
+                  type: varchar(100)
+              - column:
+                  name: size_bytes
+                  type: bigint
+              - column:
+                  name: body
+                  type: text
+              - column:
+                  name: visibility
+                  type: varchar(20)
+                  defaultValue: PUBLIC
+                  constraints:
+                    nullable: false

@@ -34,3 +34,6 @@ build/
 
 ### Environment variables ###
 .env
+
+### Local file storage ###
+var/uploads/

@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: "006"
+      author: alexandria
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: document_categories
+            constraintName: fk_doc_categories_category
+        - addForeignKeyConstraint:
+            baseTableName: document_categories
+            baseColumnNames: category_id
+            referencedTableName: categories
+            referencedColumnNames: id
+            constraintName: fk_doc_categories_category
+            onDelete: CASCADE
