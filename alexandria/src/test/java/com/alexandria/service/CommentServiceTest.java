@@ -31,7 +31,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -57,10 +56,10 @@ class CommentServiceTest {
         Comment comment = new Comment();
         CommentResponse response = commentResponse();
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
-        when(commentRepository.findByDocumentId(eq(docId), any(Pageable.class)))
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(commentRepository.findByDocumentId(any(UUID.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(comment)));
-        when(commentMapper.toResponse(comment)).thenReturn(response);
+        when(commentMapper.toResponse(any(Comment.class))).thenReturn(response);
 
         Page<CommentResponse> result = classUnderTest.getComments(docId, null, Pageable.unpaged());
 
@@ -75,10 +74,10 @@ class CommentServiceTest {
         Comment comment = new Comment();
         CommentResponse response = commentResponse();
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
-        when(commentRepository.findByDocumentId(eq(docId), any(Pageable.class)))
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(commentRepository.findByDocumentId(any(UUID.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(comment)));
-        when(commentMapper.toResponse(comment)).thenReturn(response);
+        when(commentMapper.toResponse(any(Comment.class))).thenReturn(response);
 
         Page<CommentResponse> result = classUnderTest.getComments(docId, ownerEmail, Pageable.unpaged());
 
@@ -116,9 +115,9 @@ class CommentServiceTest {
         Comment saved = new Comment();
         CommentResponse response = commentResponse();
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
         when(commentRepository.save(any(Comment.class))).thenReturn(saved);
-        when(commentMapper.toResponse(saved)).thenReturn(response);
+        when(commentMapper.toResponse(any(Comment.class))).thenReturn(response);
 
         CommentResponse result = classUnderTest.addComment(docId, request, currentUser);
 

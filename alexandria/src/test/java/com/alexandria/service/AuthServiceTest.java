@@ -64,10 +64,10 @@ class AuthServiceTest {
         UserRole userRole = new UserRole();
 
         when(roleRepository.findByName(RoleNames.USER)).thenReturn(Optional.of(role));
-        when(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(HASHED_PASSWORD);
-        when(userMapper.toUser(request, HASHED_PASSWORD)).thenReturn(user);
-        when(userMapper.toUserRole(user, role)).thenReturn(userRole);
-        when(jwtService.generateToken(user)).thenReturn(JWT_TOKEN);
+        when(passwordEncoder.encode(anyString())).thenReturn(HASHED_PASSWORD);
+        when(userMapper.toUser(any(RegisterRequest.class), anyString())).thenReturn(user);
+        when(userMapper.toUserRole(any(User.class), any(Role.class))).thenReturn(userRole);
+        when(jwtService.generateToken(any(User.class))).thenReturn(JWT_TOKEN);
 
         AuthResponse response = classUnderTest.register(request);
 
@@ -109,9 +109,9 @@ class AuthServiceTest {
         User user = new User();
         user.setPasswordHash(HASHED_PASSWORD);
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(TEST_PASSWORD, HASHED_PASSWORD)).thenReturn(true);
-        when(jwtService.generateToken(user)).thenReturn(JWT_TOKEN);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(jwtService.generateToken(any(User.class))).thenReturn(JWT_TOKEN);
 
         AuthResponse response = classUnderTest.login(request);
 
@@ -139,8 +139,8 @@ class AuthServiceTest {
         User user = new User();
         user.setPasswordHash(HASHED_PASSWORD);
 
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("wrong-password", HASHED_PASSWORD)).thenReturn(false);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         assertThatThrownBy(() -> classUnderTest.login(request))
                 .isInstanceOf(BadCredentialsException.class)

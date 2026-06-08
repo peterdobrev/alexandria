@@ -21,14 +21,12 @@ import com.alexandria.repository.ReadingListRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.UUID;
 
-@Service
 @Transactional
 @RequiredArgsConstructor
 public class ReadingListService {
@@ -88,11 +86,11 @@ public class ReadingListService {
         return readingListMapper.toItemResponse(readingListItemRepository.save(item));
     }
 
-    public void removeItem(UUID listId, UUID docId) {
+    public void removeItem(UUID listId, UUID documentId) {
         readingListRepository.findById(listId)
                 .orElseThrow(() -> new ReadingListNotFoundException(listId));
-        ReadingListItem item = readingListItemRepository.findByReadingListIdAndDocumentId(listId, docId)
-                .orElseThrow(() -> new ReadingListItemNotFoundException(listId, docId));
+        ReadingListItem item = readingListItemRepository.findByReadingListIdAndDocumentId(listId, documentId)
+                .orElseThrow(() -> new ReadingListItemNotFoundException(listId, documentId));
         readingListItemRepository.delete(item);
     }
 }

@@ -18,7 +18,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) {
         log.debug("Loading user by username: {}", username);
         return userRepository.findByEmail(username) //username and email are the same thing in our system.
                 .map(user -> {

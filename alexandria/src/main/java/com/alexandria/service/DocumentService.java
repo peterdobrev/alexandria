@@ -28,7 +28,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -41,7 +40,6 @@ import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
-@Service
 @Transactional
 @RequiredArgsConstructor
 public class DocumentService {
@@ -75,17 +73,17 @@ public class DocumentService {
         return documentMapper.toDetail(saved);
     }
 
-    public DocumentDetail createArticle(CreateArticleRequest req, UUID currentUserId) {
-        List<Category> categories = resolveCategories(req.categoryIds());
+    public DocumentDetail createArticle(CreateArticleRequest request, UUID currentUserId) {
+        List<Category> categories = resolveCategories(request.categoryIds());
         User author = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new UserNotFoundException(currentUserId));
 
         Document document = new Document();
-        document.setTitle(req.title());
-        document.setDescription(req.description());
-        document.setType(req.type());
-        document.setBody(req.body());
-        document.setVisibility(req.visibility() != null ? req.visibility() : Visibility.PUBLIC);
+        document.setTitle(request.title());
+        document.setDescription(request.description());
+        document.setType(request.type());
+        document.setBody(request.body());
+        document.setVisibility(request.visibility() != null ? request.visibility() : Visibility.PUBLIC);
         document.setAuthor(author);
         document.setDocumentCategories(buildDocumentCategories(document, categories));
 
@@ -93,21 +91,21 @@ public class DocumentService {
         return documentMapper.toDetail(saved);
     }
 
-    public DocumentDetail update(UUID id, UpdateDocumentRequest req) {
+    public DocumentDetail update(UUID id, UpdateDocumentRequest request) {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
 
-        if (req.title() != null) {
-            document.setTitle(req.title());
+        if (request.title() != null) {
+            document.setTitle(request.title());
         }
-        if (req.description() != null) {
-            document.setDescription(req.description());
+        if (request.description() != null) {
+            document.setDescription(request.description());
         }
-        if (req.visibility() != null) {
-            document.setVisibility(req.visibility());
+        if (request.visibility() != null) {
+            document.setVisibility(request.visibility());
         }
-        if (req.categoryIds() != null) {
-            List<Category> categories = resolveCategories(req.categoryIds());
+        if (request.categoryIds() != null) {
+            List<Category> categories = resolveCategories(request.categoryIds());
             document.getDocumentCategories().clear();
             document.getDocumentCategories().addAll(buildDocumentCategories(document, categories));
         }
@@ -116,7 +114,7 @@ public class DocumentService {
         return documentMapper.toDetail(saved);
     }
 
-    public void delete(UUID id, boolean isAdmin) {
+    public void delete(UUID id) {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
         final String path = document.getUploadedFilePath();
@@ -129,7 +127,7 @@ public class DocumentService {
                     try {
                         fileStorage.delete(path);
                     } catch (Exception e) {
-                        log.warn("Failed to delete file " + path, e);
+                        log.warn("Failed to delete file {}", path, e);
                     }
                 }
             }
@@ -149,12 +147,23 @@ public class DocumentService {
 
     @Transactional(readOnly = true)
     public PageResponse<DocumentSummary> list(DocumentFilters filters, Pageable pageable, UUID currentUserId) {
-        Specification<Document> spec = Specification
-                .where(DocumentSpecifications.hasType(filters.type()))
-                .and(DocumentSpecifications.hasCategory(filters.categoryId()))
-                .and(DocumentSpecifications.hasAuthor(filters.authorId()))
-                .and(DocumentSpecifications.titleContains(filters.search()))
-                .and(DocumentSpecifications.isVisible(currentUserId));
+        Specification<Document> visibilitySpec = currentUserId == null
+                ? DocumentSpecifications.isPublic()
+                : DocumentSpecifications.isVisibleToUser(currentUserId);
+        Specification<Document> spec = Specification.where(visibilitySpec);
+
+        if (filters.type() != null) {
+            spec = spec.and(DocumentSpecifications.hasType(filters.type()));
+        }
+        if (filters.categoryId() != null) {
+            spec = spec.and(DocumentSpecifications.hasCategory(filters.categoryId()));
+        }
+        if (filters.authorId() != null) {
+            spec = spec.and(DocumentSpecifications.hasAuthor(filters.authorId()));
+        }
+        if (filters.search() != null && !filters.search().isBlank()) {
+            spec = spec.and(DocumentSpecifications.titleContains(filters.search()));
+        }
 
         Page<Document> page = documentRepository.findAll(spec, pageable);
         Page<DocumentSummary> mapped = page.map(documentMapper::toSummary);

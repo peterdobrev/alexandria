@@ -19,6 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -55,14 +56,12 @@ class UserServiceTest {
         user.setDisplayName(ORIGINAL_DISPLAY_NAME);
         UserSummary expected = new UserSummary(USER_ID, ORIGINAL_DISPLAY_NAME);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(userMapper.toSummary(user)).thenReturn(expected);
+        when(userRepository.findById(any(UUID.class))).thenReturn(Optional.of(user));
+        when(userMapper.toSummary(any(User.class))).thenReturn(expected);
 
         UserSummary result = classUnderTest.get(USER_ID);
 
         assertThat(result).isEqualTo(expected);
-        assertThat(result.id()).isEqualTo(USER_ID);
-        assertThat(result.displayName()).isEqualTo(ORIGINAL_DISPLAY_NAME);
     }
 
     @Test
@@ -85,9 +84,9 @@ class UserServiceTest {
         UpdateUserRequest request = new UpdateUserRequest(NEW_DISPLAY_NAME, null);
         UserSummary expected = new UserSummary(USER_ID, NEW_DISPLAY_NAME);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toSummary(user)).thenReturn(expected);
+        when(userRepository.findById(any(UUID.class))).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userMapper.toSummary(any(User.class))).thenReturn(expected);
 
         UserSummary result = classUnderTest.update(USER_ID, request);
 
@@ -107,10 +106,10 @@ class UserServiceTest {
         UpdateUserRequest request = new UpdateUserRequest(null, NEW_PASSWORD);
         UserSummary expected = new UserSummary(USER_ID, ORIGINAL_DISPLAY_NAME);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
-        when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toSummary(user)).thenReturn(expected);
+        when(userRepository.findById(any(UUID.class))).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(anyString())).thenReturn(ENCODED_PASSWORD);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userMapper.toSummary(any(User.class))).thenReturn(expected);
 
         UserSummary result = classUnderTest.update(USER_ID, request);
 

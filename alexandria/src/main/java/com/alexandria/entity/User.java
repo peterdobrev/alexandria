@@ -33,7 +33,7 @@ public class User {
     @Column(name = "display_name")
     private String displayName;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)

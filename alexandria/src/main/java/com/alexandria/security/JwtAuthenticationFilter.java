@@ -1,7 +1,7 @@
 package com.alexandria.security;
 
+import com.alexandria.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     setAuthentication(email, request);
                     log.debug("Authenticated user: {}", email);
                 }
-            } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
+            } catch (InvalidTokenException | IllegalArgumentException | UsernameNotFoundException e) {
                 log.warn("JWT authentication failed on {}: {}", request.getRequestURI(), e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;

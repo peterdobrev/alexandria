@@ -5,9 +5,7 @@ import com.alexandria.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Component;
 
-@Component
 @RequiredArgsConstructor
 public class SecurityUtils {
 

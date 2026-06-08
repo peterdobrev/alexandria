@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -36,7 +37,7 @@ public class CommentController {
             @PathVariable UUID documentId,
             Authentication authentication,
             Pageable pageable) {
-        String currentUserEmail = authentication != null ? authentication.getName() : null;
+        String currentUserEmail = resolveCurrentUserEmail(authentication).orElse(null);
         return ResponseEntity.ok(commentService.getComments(documentId, currentUserEmail, pageable));
     }
 
@@ -55,5 +56,12 @@ public class CommentController {
             @PathVariable UUID commentId) {
         commentService.deleteComment(documentId, commentId);
         return ResponseEntity.noContent().build();
+    }
+
+    private Optional<String> resolveCurrentUserEmail(Authentication authentication) {
+        if (authentication == null) {
+            return Optional.empty();
+        }
+        return Optional.of(authentication.getName());
     }
 }
