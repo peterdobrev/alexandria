@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CommentMapperTest {
 
-    private final CommentMapper mapper = new CommentMapper();
+    private final CommentMapper mapper = new CommentMapper(new UserMapper());
 
     @Test
     void toResponse_mapsAllFields() {
