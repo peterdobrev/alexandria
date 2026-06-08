@@ -1,9 +1,8 @@
 package com.alexandria.service;
 
-import com.alexandria.dto.UpdateUserRequest;
-import com.alexandria.dto.UserResponse;
+import com.alexandria.dto.user.UpdateUserRequest;
+import com.alexandria.dto.user.UserSummary;
 import com.alexandria.entity.User;
-import com.alexandria.exception.ForbiddenException;
 import com.alexandria.exception.UserNotFoundException;
 import com.alexandria.mapper.UserMapper;
 import com.alexandria.repository.UserRepository;
@@ -14,17 +13,26 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
+
+    private static final UUID USER_ID = UUID.randomUUID();
+    private static final String ORIGINAL_DISPLAY_NAME = "Original Name";
+    private static final String NEW_DISPLAY_NAME = "New Name";
+    private static final String ORIGINAL_PASSWORD_HASH = "original-hash";
+    private static final String NEW_PASSWORD = "newpassword";
+    private static final String ENCODED_PASSWORD = "encoded-password";
 
     @Mock
     private UserRepository userRepository;
@@ -41,72 +49,87 @@ class UserServiceTest {
     }
 
     @Test
-    void getUser_existingUser_returnsUserResponse() {
-        UUID id = UUID.randomUUID();
+    void get_existingUser_returnsUserSummary() {
         User user = new User();
-        UserResponse response = new UserResponse(id, "test@test.com", "Test User", Instant.now());
+        user.setId(USER_ID);
+        user.setDisplayName(ORIGINAL_DISPLAY_NAME);
+        UserSummary expected = new UserSummary(USER_ID, ORIGINAL_DISPLAY_NAME);
 
-        when(userRepository.findById(id)).thenReturn(Optional.of(user));
-        when(userMapper.toResponse(user)).thenReturn(response);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userMapper.toSummary(user)).thenReturn(expected);
 
-        assertThat(classUnderTest.getUser(id)).isEqualTo(response);
+        UserSummary result = classUnderTest.get(USER_ID);
+
+        assertThat(result).isEqualTo(expected);
+        assertThat(result.id()).isEqualTo(USER_ID);
+        assertThat(result.displayName()).isEqualTo(ORIGINAL_DISPLAY_NAME);
     }
 
     @Test
-    void getUser_nonExistentUser_throwsUserNotFoundException() {
-        UUID id = UUID.randomUUID();
-        when(userRepository.findById(id)).thenReturn(Optional.empty());
+    void get_nonExistentUser_throwsUserNotFoundException() {
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> classUnderTest.getUser(id))
-                .isInstanceOf(UserNotFoundException.class);
+        assertThatThrownBy(() -> classUnderTest.get(USER_ID))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining(USER_ID.toString());
+
+        verifyNoInteractions(userMapper);
     }
 
     @Test
-    void updateUser_sameUser_updatesDisplayName() {
-        UUID id = UUID.randomUUID();
-        User currentUser = new User();
-        currentUser.setId(id);
+    void update_displayNameOnly_updatesAndReturnsSummary() {
         User user = new User();
-        user.setId(id);
-        UpdateUserRequest request = new UpdateUserRequest("New Name", null);
-        UserResponse response = new UserResponse(id, "test@test.com", "New Name", Instant.now());
+        user.setId(USER_ID);
+        user.setDisplayName(ORIGINAL_DISPLAY_NAME);
+        user.setPasswordHash(ORIGINAL_PASSWORD_HASH);
+        UpdateUserRequest request = new UpdateUserRequest(NEW_DISPLAY_NAME, null);
+        UserSummary expected = new UserSummary(USER_ID, NEW_DISPLAY_NAME);
 
-        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toResponse(user)).thenReturn(response);
+        when(userMapper.toSummary(user)).thenReturn(expected);
 
-        assertThat(classUnderTest.updateUser(id, request, currentUser)).isEqualTo(response);
-        assertThat(user.getDisplayName()).isEqualTo("New Name");
+        UserSummary result = classUnderTest.update(USER_ID, request);
+
+        assertThat(result).isEqualTo(expected);
+        assertThat(user.getDisplayName()).isEqualTo(NEW_DISPLAY_NAME);
+        assertThat(user.getPasswordHash()).isEqualTo(ORIGINAL_PASSWORD_HASH);
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository).save(user);
     }
 
     @Test
-    void updateUser_differentUser_throwsForbiddenException() {
-        UUID id = UUID.randomUUID();
-        User currentUser = new User();
-        currentUser.setId(UUID.randomUUID());
-        UpdateUserRequest request = new UpdateUserRequest("New Name", null);
-
-        assertThatThrownBy(() -> classUnderTest.updateUser(id, request, currentUser))
-                .isInstanceOf(ForbiddenException.class);
-    }
-
-    @Test
-    void updateUser_withPassword_encodesAndSetsPasswordHash() {
-        UUID id = UUID.randomUUID();
-        User currentUser = new User();
-        currentUser.setId(id);
+    void update_passwordOnly_encodesAndSetsPasswordHash() {
         User user = new User();
-        user.setId(id);
-        UpdateUserRequest request = new UpdateUserRequest(null, "newpassword");
+        user.setId(USER_ID);
+        user.setDisplayName(ORIGINAL_DISPLAY_NAME);
+        user.setPasswordHash(ORIGINAL_PASSWORD_HASH);
+        UpdateUserRequest request = new UpdateUserRequest(null, NEW_PASSWORD);
+        UserSummary expected = new UserSummary(USER_ID, ORIGINAL_DISPLAY_NAME);
 
-        when(userRepository.findById(id)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("newpassword")).thenReturn("encoded-password");
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toResponse(user)).thenReturn(new UserResponse(id, "test@test.com", null, Instant.now()));
+        when(userMapper.toSummary(user)).thenReturn(expected);
 
-        classUnderTest.updateUser(id, request, currentUser);
+        UserSummary result = classUnderTest.update(USER_ID, request);
 
-        assertThat(user.getPasswordHash()).isEqualTo("encoded-password");
-        verify(passwordEncoder).encode("newpassword");
+        assertThat(result).isEqualTo(expected);
+        assertThat(user.getPasswordHash()).isEqualTo(ENCODED_PASSWORD);
+        assertThat(user.getDisplayName()).isEqualTo(ORIGINAL_DISPLAY_NAME);
+        verify(passwordEncoder).encode(NEW_PASSWORD);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void update_userNotFound_throwsUserNotFoundException() {
+        UpdateUserRequest request = new UpdateUserRequest(NEW_DISPLAY_NAME, null);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> classUnderTest.update(USER_ID, request))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining(USER_ID.toString());
+
+        verifyNoInteractions(userMapper, passwordEncoder);
     }
 }
