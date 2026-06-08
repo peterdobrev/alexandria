@@ -2,6 +2,7 @@ package com.alexandria.mapper;
 
 import com.alexandria.dto.RegisterRequest;
 import com.alexandria.dto.UserResponse;
+import com.alexandria.dto.document.AuthorSummary;
 import com.alexandria.dto.user.UserSummary;
 import com.alexandria.entity.Role;
 import com.alexandria.entity.User;
@@ -27,6 +28,10 @@ public class UserMapper {
 
     public UserSummary toSummary(User user) {
         return new UserSummary(user.getId(), user.getDisplayName());
+    }
+
+    public AuthorSummary toAuthorSummary(User user) {
+        return new AuthorSummary(user.getId(), user.getDisplayName());
     }
 
     public UserRole toUserRole(User user, Role role) {
