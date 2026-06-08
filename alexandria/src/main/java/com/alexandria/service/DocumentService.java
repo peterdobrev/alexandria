@@ -1,29 +1,46 @@
 package com.alexandria.service;
 
-import com.alexandria.dto.CreateDocumentRequest;
-import com.alexandria.dto.DocumentResponse;
-import com.alexandria.dto.DocumentSummaryResponse;
-import com.alexandria.dto.UpdateDocumentRequest;
+import com.alexandria.dto.common.PageResponse;
+import com.alexandria.dto.document.CreateArticleRequest;
+import com.alexandria.dto.document.CreateDocumentRequest;
+import com.alexandria.dto.document.DocumentDetail;
+import com.alexandria.dto.document.DocumentSummary;
+import com.alexandria.dto.document.UpdateDocumentRequest;
 import com.alexandria.entity.Category;
 import com.alexandria.entity.Document;
 import com.alexandria.entity.DocumentCategory;
 import com.alexandria.entity.DocumentCategoryId;
 import com.alexandria.entity.User;
+import com.alexandria.entity.Visibility;
+import com.alexandria.exception.CategoryNotFoundException;
 import com.alexandria.exception.DocumentNotFoundException;
-import com.alexandria.exception.ForbiddenException;
+import com.alexandria.exception.UserNotFoundException;
 import com.alexandria.mapper.DocumentMapper;
 import com.alexandria.repository.CategoryRepository;
 import com.alexandria.repository.DocumentRepository;
+import com.alexandria.repository.DocumentSpecifications;
+import com.alexandria.repository.UserRepository;
+import com.alexandria.storage.FileStorageService;
+import com.alexandria.storage.StoredFile;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -31,76 +48,162 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+    private final FileStorageService fileStorage;
     private final DocumentMapper documentMapper;
 
-    @Transactional(readOnly = true)
-    public Page<DocumentSummaryResponse> getDocuments(String type, UUID categoryId, UUID authorId,
-                                                      String search, Pageable pageable) {
-        return documentRepository.findWithFilters(type, authorId, categoryId, search, pageable)
-                .map(documentMapper::toSummaryResponse);
-    }
+    public DocumentDetail create(CreateDocumentRequest meta, MultipartFile file, UUID currentUserId) {
+        List<Category> categories = resolveCategories(meta.categoryIds());
+        User author = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException(currentUserId));
 
-    @Transactional(readOnly = true)
-    public DocumentResponse getDocument(UUID id) {
-        return documentMapper.toResponse(documentRepository.findById(id)
-                .orElseThrow(() -> new DocumentNotFoundException(id)));
-    }
+        StoredFile storedFile = fileStorage.store(file);
 
-    public DocumentResponse createDocument(CreateDocumentRequest request, User author) {
         Document document = new Document();
-        document.setTitle(request.title());
-        document.setDescription(request.description());
-        document.setType(request.type());
-        document.setFileUrl(request.fileUrl());
+        document.setTitle(meta.title());
+        document.setDescription(meta.description());
+        document.setType(meta.type());
+        document.setUploadedFilePath(storedFile.path());
+        document.setOriginalFilename(storedFile.originalFilename());
+        document.setContentType(storedFile.contentType());
+        document.setSizeBytes(storedFile.sizeBytes());
+        document.setVisibility(meta.visibility() != null ? meta.visibility() : Visibility.PUBLIC);
         document.setAuthor(author);
-        document.setCreatedAt(Instant.now());
-        document.setUpdatedAt(Instant.now());
-        document.setDocumentCategories(buildDocumentCategories(document, request.categoryIds()));
-        return documentMapper.toResponse(documentRepository.save(document));
+        document.setDocumentCategories(buildDocumentCategories(document, categories));
+
+        Document saved = documentRepository.save(document);
+        return documentMapper.toDetail(saved);
     }
 
-    public DocumentResponse updateDocument(UUID id, UpdateDocumentRequest request, User currentUser) {
+    public DocumentDetail createArticle(CreateArticleRequest req, UUID currentUserId) {
+        List<Category> categories = resolveCategories(req.categoryIds());
+        User author = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException(currentUserId));
+
+        Document document = new Document();
+        document.setTitle(req.title());
+        document.setDescription(req.description());
+        document.setType(req.type());
+        document.setBody(req.body());
+        document.setVisibility(req.visibility() != null ? req.visibility() : Visibility.PUBLIC);
+        document.setAuthor(author);
+        document.setDocumentCategories(buildDocumentCategories(document, categories));
+
+        Document saved = documentRepository.save(document);
+        return documentMapper.toDetail(saved);
+    }
+
+    public DocumentDetail update(UUID id, UpdateDocumentRequest req) {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
-        if (!document.getAuthor().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to update this document");
+
+        if (req.title() != null) {
+            document.setTitle(req.title());
         }
-        if (request.title() != null) {
-            document.setTitle(request.title());
+        if (req.description() != null) {
+            document.setDescription(req.description());
         }
-        if (request.description() != null) {
-            document.setDescription(request.description());
+        if (req.visibility() != null) {
+            document.setVisibility(req.visibility());
         }
-        if (request.categoryIds() != null) {
+        if (req.categoryIds() != null) {
+            List<Category> categories = resolveCategories(req.categoryIds());
             document.getDocumentCategories().clear();
-            document.getDocumentCategories().addAll(buildDocumentCategories(document, request.categoryIds()));
+            document.getDocumentCategories().addAll(buildDocumentCategories(document, categories));
         }
-        document.setUpdatedAt(Instant.now());
-        return documentMapper.toResponse(documentRepository.save(document));
+
+        Document saved = documentRepository.save(document);
+        return documentMapper.toDetail(saved);
     }
 
-    public void deleteDocument(UUID id, User currentUser) {
+    public void delete(UUID id, boolean isAdmin) {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
-        if (!document.getAuthor().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("You don't have permission to delete this document");
-        }
+        final String path = document.getUploadedFilePath();
         documentRepository.delete(document);
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (path != null) {
+                    try {
+                        fileStorage.delete(path);
+                    } catch (Exception e) {
+                        log.warn("Failed to delete file " + path, e);
+                    }
+                }
+            }
+        });
     }
 
-    private List<DocumentCategory> buildDocumentCategories(Document document, List<UUID> categoryIds) {
-        if (categoryIds == null || categoryIds.isEmpty()) {
-            return List.of();
+    @Transactional(readOnly = true)
+    public DocumentDetail get(UUID id, UUID currentUserId) {
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException(id));
+        if (document.getVisibility() == Visibility.PRIVATE
+                && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {
+            throw new DocumentNotFoundException(id);
         }
-        List<Category> categories = categoryRepository.findAllById(categoryIds);
-        return categories.stream()
-                .map(category -> {
-                    DocumentCategory dc = new DocumentCategory();
-                    dc.setId(new DocumentCategoryId());
-                    dc.setDocument(document);
-                    dc.setCategory(category);
-                    return dc;
-                })
-                .toList();
+        return documentMapper.toDetail(document);
     }
+
+    @Transactional(readOnly = true)
+    public PageResponse<DocumentSummary> list(DocumentFilters filters, Pageable pageable, UUID currentUserId) {
+        Specification<Document> spec = Specification
+                .where(DocumentSpecifications.hasType(filters.type()))
+                .and(DocumentSpecifications.hasCategory(filters.categoryId()))
+                .and(DocumentSpecifications.hasAuthor(filters.authorId()))
+                .and(DocumentSpecifications.titleContains(filters.search()))
+                .and(DocumentSpecifications.isVisible(currentUserId));
+
+        Page<Document> page = documentRepository.findAll(spec, pageable);
+        Page<DocumentSummary> mapped = page.map(documentMapper::toSummary);
+        return PageResponse.of(mapped);
+    }
+
+    @Transactional(readOnly = true)
+    public StoredFileResource streamFile(UUID id, UUID currentUserId) {
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException(id));
+        if (document.getVisibility() == Visibility.PRIVATE
+                && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {
+            throw new DocumentNotFoundException(id);
+        }
+        Resource resource = fileStorage.load(document.getUploadedFilePath());
+        long size = document.getSizeBytes() != null ? document.getSizeBytes() : 0L;
+        return new StoredFileResource(resource, document.getContentType(), document.getOriginalFilename(), size);
+    }
+
+    private List<Category> resolveCategories(Set<UUID> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Category> categories = new ArrayList<>(categoryIds.size());
+        for (UUID categoryId : categoryIds) {
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new CategoryNotFoundException(categoryId));
+            categories.add(category);
+        }
+        return categories;
+    }
+
+    private List<DocumentCategory> buildDocumentCategories(Document document, List<Category> categories) {
+        List<DocumentCategory> result = new ArrayList<>();
+        Set<UUID> seen = new HashSet<>();
+        for (Category category : categories) {
+            if (!seen.add(category.getId())) {
+                continue;
+            }
+            DocumentCategory dc = new DocumentCategory();
+            dc.setId(new DocumentCategoryId());
+            dc.setDocument(document);
+            dc.setCategory(category);
+            result.add(dc);
+        }
+        return result;
+    }
+
+    public record DocumentFilters(String type, UUID categoryId, UUID authorId, String search) {}
+
+    public record StoredFileResource(Resource resource, String contentType, String originalFilename, long sizeBytes) {}
 }
