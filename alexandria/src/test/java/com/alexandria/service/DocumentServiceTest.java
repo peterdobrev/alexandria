@@ -97,8 +97,8 @@ class DocumentServiceTest {
 
         DocumentDetail expected = sampleDetail(userId);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(author));
-        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(userRepository.findById(any(UUID.class))).thenReturn(Optional.of(author));
+        when(categoryRepository.findById(any(UUID.class))).thenReturn(Optional.of(category));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
         when(documentMapper.toDetail(any(Document.class))).thenReturn(expected);
 
@@ -164,8 +164,8 @@ class DocumentServiceTest {
         Document doc = publicDocument(docId, UUID.randomUUID());
         DocumentDetail expected = sampleDetail(docId);
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
-        when(documentMapper.toDetail(doc)).thenReturn(expected);
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(documentMapper.toDetail(any(Document.class))).thenReturn(expected);
 
         DocumentDetail result = classUnderTest.get(docId, userId);
 
@@ -205,8 +205,8 @@ class DocumentServiceTest {
         Document doc = privateDocument(docId, authorId);
         DocumentDetail expected = sampleDetail(docId);
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
-        when(documentMapper.toDetail(doc)).thenReturn(expected);
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(documentMapper.toDetail(any(Document.class))).thenReturn(expected);
 
         DocumentDetail result = classUnderTest.get(docId, authorId);
 
@@ -274,7 +274,7 @@ class DocumentServiceTest {
         // not assert what the callback does — that is out of scope here.
         TransactionSynchronizationManager.initSynchronization();
         try {
-            classUnderTest.delete(docId, false);
+            classUnderTest.delete(docId);
         } finally {
             TransactionSynchronizationManager.clear();
         }
@@ -287,7 +287,7 @@ class DocumentServiceTest {
         UUID docId = UUID.randomUUID();
         when(documentRepository.findById(docId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> classUnderTest.delete(docId, false))
+        assertThatThrownBy(() -> classUnderTest.delete(docId))
                 .isInstanceOf(DocumentNotFoundException.class)
                 .hasMessageContaining(docId.toString());
 

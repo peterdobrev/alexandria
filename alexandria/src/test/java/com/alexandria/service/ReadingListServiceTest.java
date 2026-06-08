@@ -71,8 +71,8 @@ class ReadingListServiceTest {
         ReadingListSummaryResponse summary = new ReadingListSummaryResponse(UUID.randomUUID(), "My List", Instant.now());
         Page<ReadingList> page = new PageImpl<>(List.of(list));
 
-        when(readingListRepository.findByUserId(currentUser.getId(), Pageable.unpaged())).thenReturn(page);
-        when(readingListMapper.toSummaryResponse(list)).thenReturn(summary);
+        when(readingListRepository.findByUserId(any(UUID.class), any(Pageable.class))).thenReturn(page);
+        when(readingListMapper.toSummaryResponse(any(ReadingList.class))).thenReturn(summary);
 
         Page<ReadingListSummaryResponse> result = classUnderTest.getReadingLists(currentUser, Pageable.unpaged());
 
@@ -87,7 +87,7 @@ class ReadingListServiceTest {
         ReadingListResponse response = readingListResponse();
 
         when(readingListRepository.save(any(ReadingList.class))).thenReturn(saved);
-        when(readingListMapper.toResponse(saved)).thenReturn(response);
+        when(readingListMapper.toResponse(any(ReadingList.class))).thenReturn(response);
 
         ReadingListResponse result = classUnderTest.createReadingList(request, currentUser);
 
@@ -108,8 +108,8 @@ class ReadingListServiceTest {
         ReadingList list = new ReadingList();
         ReadingListResponse response = readingListResponse();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
-        when(readingListMapper.toResponse(list)).thenReturn(response);
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(readingListMapper.toResponse(any(ReadingList.class))).thenReturn(response);
 
         assertThat(classUnderTest.getReadingList(listId)).isEqualTo(response);
     }
@@ -117,7 +117,7 @@ class ReadingListServiceTest {
     @Test
     void getReadingList_unknownId_throwsReadingListNotFoundException() {
         UUID listId = UUID.randomUUID();
-        when(readingListRepository.findById(listId)).thenReturn(Optional.empty());
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.getReadingList(listId))
                 .isInstanceOf(ReadingListNotFoundException.class);
@@ -131,9 +131,9 @@ class ReadingListServiceTest {
         UpdateReadingListRequest request = new UpdateReadingListRequest("Updated Name");
         ReadingListResponse response = readingListResponse();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
-        when(readingListRepository.save(list)).thenReturn(list);
-        when(readingListMapper.toResponse(list)).thenReturn(response);
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(readingListRepository.save(any(ReadingList.class))).thenReturn(list);
+        when(readingListMapper.toResponse(any(ReadingList.class))).thenReturn(response);
 
         assertThat(classUnderTest.updateReadingList(listId, request)).isEqualTo(response);
         assertThat(list.getName()).isEqualTo("Updated Name");
@@ -142,7 +142,7 @@ class ReadingListServiceTest {
     @Test
     void updateReadingList_unknownId_throwsReadingListNotFoundException() {
         UUID listId = UUID.randomUUID();
-        when(readingListRepository.findById(listId)).thenReturn(Optional.empty());
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.updateReadingList(listId, new UpdateReadingListRequest("Name")))
                 .isInstanceOf(ReadingListNotFoundException.class);
@@ -155,7 +155,7 @@ class ReadingListServiceTest {
         UUID listId = UUID.randomUUID();
         ReadingList list = new ReadingList();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
 
         classUnderTest.deleteReadingList(listId);
 
@@ -165,7 +165,7 @@ class ReadingListServiceTest {
     @Test
     void deleteReadingList_unknownId_throwsReadingListNotFoundException() {
         UUID listId = UUID.randomUUID();
-        when(readingListRepository.findById(listId)).thenReturn(Optional.empty());
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.deleteReadingList(listId))
                 .isInstanceOf(ReadingListNotFoundException.class);
@@ -182,10 +182,10 @@ class ReadingListServiceTest {
         ReadingListItem savedItem = new ReadingListItem();
         ReadingListItemResponse itemResponse = itemResponse(docId);
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(document));
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(document));
         when(readingListItemRepository.save(any(ReadingListItem.class))).thenReturn(savedItem);
-        when(readingListMapper.toItemResponse(savedItem)).thenReturn(itemResponse);
+        when(readingListMapper.toItemResponse(any(ReadingListItem.class))).thenReturn(itemResponse);
 
         ReadingListItemResponse result = classUnderTest.addItem(listId, new AddReadingListItemRequest(docId));
 
@@ -204,7 +204,7 @@ class ReadingListServiceTest {
         UUID listId = UUID.randomUUID();
         UUID docId = UUID.randomUUID();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.empty());
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId)))
                 .isInstanceOf(ReadingListNotFoundException.class);
@@ -218,8 +218,8 @@ class ReadingListServiceTest {
         UUID docId = UUID.randomUUID();
         ReadingList list = new ReadingList();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
-        when(documentRepository.findById(docId)).thenReturn(Optional.empty());
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId)))
                 .isInstanceOf(DocumentNotFoundException.class);
@@ -234,8 +234,8 @@ class ReadingListServiceTest {
         ReadingList list = new ReadingList();
         ReadingListItem item = new ReadingListItem();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
-        when(readingListItemRepository.findByReadingListIdAndDocumentId(listId, docId))
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(readingListItemRepository.findByReadingListIdAndDocumentId(any(UUID.class), any(UUID.class)))
                 .thenReturn(Optional.of(item));
 
         classUnderTest.removeItem(listId, docId);
@@ -248,7 +248,7 @@ class ReadingListServiceTest {
         UUID listId = UUID.randomUUID();
         UUID docId = UUID.randomUUID();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.empty());
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.removeItem(listId, docId))
                 .isInstanceOf(ReadingListNotFoundException.class);
@@ -262,8 +262,8 @@ class ReadingListServiceTest {
         UUID docId = UUID.randomUUID();
         ReadingList list = new ReadingList();
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(list));
-        when(readingListItemRepository.findByReadingListIdAndDocumentId(listId, docId))
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(readingListItemRepository.findByReadingListIdAndDocumentId(any(UUID.class), any(UUID.class)))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.removeItem(listId, docId))

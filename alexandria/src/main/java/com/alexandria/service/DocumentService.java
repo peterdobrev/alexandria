@@ -127,7 +127,7 @@ public class DocumentService {
                     try {
                         fileStorage.delete(path);
                     } catch (Exception e) {
-                        log.warn("Failed to delete file " + path, e);
+                        log.warn("Failed to delete file {}", path, e);
                     }
                 }
             }

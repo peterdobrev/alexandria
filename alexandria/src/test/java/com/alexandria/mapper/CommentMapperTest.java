@@ -15,7 +15,7 @@ class CommentMapperTest {
     private final CommentMapper mapper = new CommentMapper(new UserMapper());
 
     @Test
-    void toResponse_mapsAllFields() {
+    void toResponse_commentWithAllFieldsSet_mapsAllFieldsToResponse() {
         User author = new User();
         author.setId(UUID.randomUUID());
         author.setDisplayName("Alice");
