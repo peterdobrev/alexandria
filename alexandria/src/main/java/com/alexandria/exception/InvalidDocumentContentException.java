@@ -1,8 +1,8 @@
 package com.alexandria.exception;
 
-public class InvalidDocumentContentException extends ConflictException {
+public class InvalidDocumentContentException extends IllegalArgumentException {
 
     public InvalidDocumentContentException(String message) {
-        super(message, "INVALID_DOCUMENT_CONTENT");
+        super(message);
     }
 }

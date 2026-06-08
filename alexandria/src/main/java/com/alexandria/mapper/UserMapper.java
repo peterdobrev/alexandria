@@ -8,11 +8,8 @@ import com.alexandria.entity.Role;
 import com.alexandria.entity.User;
 import com.alexandria.entity.UserRole;
 import com.alexandria.entity.UserRoleId;
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 
-@Component
 public class UserMapper {
 
     public User toUser(RegisterRequest request, String encodedPassword) {
