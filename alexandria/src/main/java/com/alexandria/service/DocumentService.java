@@ -63,7 +63,7 @@ public class DocumentService {
         document.setTitle(meta.title());
         document.setDescription(meta.description());
         document.setType(meta.type());
-        document.setUploadedFilePath(storedFile.path());
+        document.setUploadedFilePath(storedFile.relativePath());
         document.setOriginalFilename(storedFile.originalFilename());
         document.setContentType(storedFile.contentType());
         document.setSizeBytes(storedFile.sizeBytes());
