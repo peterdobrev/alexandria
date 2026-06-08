@@ -1,19 +1,20 @@
 package com.alexandria.service;
 
-import com.alexandria.dto.UpdateUserRequest;
-import com.alexandria.dto.UserResponse;
+import com.alexandria.dto.user.UpdateUserRequest;
+import com.alexandria.dto.user.UserSummary;
 import com.alexandria.entity.User;
-import com.alexandria.exception.ForbiddenException;
 import com.alexandria.exception.UserNotFoundException;
 import com.alexandria.mapper.UserMapper;
 import com.alexandria.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -24,15 +25,12 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public UserResponse getUser(UUID id) {
-        return userMapper.toResponse(userRepository.findById(id)
+    public UserSummary get(UUID id) {
+        return userMapper.toSummary(userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id)));
     }
 
-    public UserResponse updateUser(UUID id, UpdateUserRequest request, User currentUser) {
-        if (!currentUser.getId().equals(id)) {
-            throw new ForbiddenException("You don't have permission to update this user");
-        }
+    public UserSummary update(UUID id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
         if (request.displayName() != null) {
@@ -40,7 +38,8 @@ public class UserService {
         }
         if (request.password() != null) {
             user.setPasswordHash(passwordEncoder.encode(request.password()));
+            log.info("Password changed for user: {}", user.getEmail());
         }
-        return userMapper.toResponse(userRepository.save(user));
+        return userMapper.toSummary(userRepository.save(user));
     }
 }
