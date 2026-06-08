@@ -1,7 +1,9 @@
 package com.alexandria.security;
 
 import com.alexandria.entity.User;
+import com.alexandria.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -31,10 +33,14 @@ public class JwtService {
     }
 
     public Claims extractClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (JwtException ex) {
+            throw new InvalidTokenException("JWT token is invalid or expired", ex);
+        }
     }
 }

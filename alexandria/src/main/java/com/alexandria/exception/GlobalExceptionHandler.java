@@ -56,14 +56,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex,
                                                             HttpServletRequest request) {
         log.warn("Access denied on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+        return build(HttpStatus.FORBIDDEN, "Access denied", request);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleMaxUploadSize(MaxUploadSizeExceededException ex,
                                                              HttpServletRequest request) {
         log.warn("Upload too large on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage(), request);
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "Upload size exceeds the allowed limit", request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex,
                                                                HttpServletRequest request) {
         log.warn("Bad credentials on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+        return build(HttpStatus.UNAUTHORIZED, "Invalid credentials", request);
     }
 
     @ExceptionHandler(Exception.class)

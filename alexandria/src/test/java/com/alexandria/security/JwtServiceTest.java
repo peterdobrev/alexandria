@@ -1,8 +1,8 @@
 package com.alexandria.security;
 
 import com.alexandria.entity.User;
+import com.alexandria.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.WeakKeyException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,17 +33,17 @@ class JwtServiceTest {
     }
 
     @Test
-    void extractClaims_expiredToken_throwsJwtException() {
+    void extractClaims_expiredToken_throwsInvalidTokenException() {
         JwtService shortLived = new JwtService(SECRET, -1L);
         String expired = shortLived.generateToken(user);
         assertThatThrownBy(() -> classUnderTest.extractClaims(expired))
-                .isInstanceOf(JwtException.class);
+                .isInstanceOf(InvalidTokenException.class);
     }
 
     @Test
-    void extractClaims_tamperedToken_throwsJwtException() {
+    void extractClaims_tamperedToken_throwsInvalidTokenException() {
         assertThatThrownBy(() -> classUnderTest.extractClaims("tampered.token.value"))
-                .isInstanceOf(JwtException.class);
+                .isInstanceOf(InvalidTokenException.class);
     }
 
     @Test

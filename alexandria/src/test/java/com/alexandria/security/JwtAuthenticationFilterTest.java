@@ -1,7 +1,7 @@
 package com.alexandria.security;
 
+import com.alexandria.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
@@ -109,7 +109,7 @@ class JwtAuthenticationFilterTest {
     @Test
     void doFilterInternal_invalidToken_returns401WithoutContinuingChain() throws ServletException, IOException {
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + INVALID_TOKEN);
-        when(jwtService.extractClaims(INVALID_TOKEN)).thenThrow(JwtException.class);
+        when(jwtService.extractClaims(INVALID_TOKEN)).thenThrow(InvalidTokenException.class);
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
