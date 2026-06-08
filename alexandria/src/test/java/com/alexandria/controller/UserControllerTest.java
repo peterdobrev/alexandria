@@ -1,9 +1,7 @@
 package com.alexandria.controller;
 
-import com.alexandria.dto.UpdateUserRequest;
-import com.alexandria.dto.UserResponse;
-import com.alexandria.entity.User;
-import com.alexandria.security.SecurityUtils;
+import com.alexandria.dto.user.UpdateUserRequest;
+import com.alexandria.dto.user.UserSummary;
 import com.alexandria.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -32,8 +29,6 @@ class UserControllerTest {
 
     @Mock
     private UserService userService;
-    @Mock
-    private SecurityUtils securityUtils;
 
     @InjectMocks
     private UserController classUnderTest;
@@ -49,40 +44,39 @@ class UserControllerTest {
     @Test
     void getUser_existingUser_returns200WithBody() throws Exception {
         UUID id = UUID.randomUUID();
-        UserResponse response = new UserResponse(id, "test@test.com", "Test User", Instant.now());
+        UserSummary summary = new UserSummary(id, "Test User");
 
-        when(userService.getUser(id)).thenReturn(response);
+        when(userService.get(id)).thenReturn(summary);
 
         mockMvc.perform(get("/api/users/" + id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("test@test.com"))
+                .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.displayName").value("Test User"));
     }
 
     @Test
     void updateUser_validRequest_returns200() throws Exception {
         UUID id = UUID.randomUUID();
-        User currentUser = new User();
         UpdateUserRequest request = new UpdateUserRequest("New Name", null);
-        UserResponse response = new UserResponse(id, "test@test.com", "New Name", Instant.now());
+        UserSummary summary = new UserSummary(id, "New Name");
 
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(userService.updateUser(eq(id), any(UpdateUserRequest.class), any(User.class))).thenReturn(response);
+        when(userService.update(eq(id), any(UpdateUserRequest.class))).thenReturn(summary);
 
         mockMvc.perform(put("/api/users/" + id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.displayName").value("New Name"));
     }
 
     @Test
-    void updateUser_emptyDisplayName_returns400() throws Exception {
+    void updateUser_shortPassword_returns400() throws Exception {
         UUID id = UUID.randomUUID();
 
         mockMvc.perform(put("/api/users/" + id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"displayName\":\"\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"password\":\"short\"}"))
                 .andExpect(status().isBadRequest());
     }
 }
