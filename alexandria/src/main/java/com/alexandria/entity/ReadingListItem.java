@@ -24,11 +24,11 @@ public class ReadingListItem {
     private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "list_id")
+    @JoinColumn(name = "list_id", nullable = false)
     private ReadingList readingList;
 
     @ManyToOne
-    @JoinColumn(name = "document_id")
+    @JoinColumn(name = "document_id", nullable = false)
     private Document document;
 
     @Column(name = "added_at")
