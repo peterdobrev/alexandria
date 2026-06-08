@@ -29,19 +29,19 @@ public class CommentService {
 
     @Transactional(readOnly = true)
     public Page<CommentResponse> getComments(UUID documentId, String currentUserEmail, Pageable pageable) {
-        Document doc = documentRepository.findById(documentId)
+        Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(documentId));
-        assertVisible(doc, currentUserEmail);
+        assertVisible(document, currentUserEmail);
         return commentRepository.findByDocumentId(documentId, pageable)
                 .map(commentMapper::toResponse);
     }
 
     public CommentResponse addComment(UUID documentId, CreateCommentRequest request, User currentUser) {
-        Document doc = documentRepository.findById(documentId)
+        Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(documentId));
-        assertVisible(doc, currentUser.getEmail());
+        assertVisible(document, currentUser.getEmail());
         Comment comment = new Comment();
-        comment.setDocument(doc);
+        comment.setDocument(document);
         comment.setAuthor(currentUser);
         comment.setBody(request.body());
         return commentMapper.toResponse(commentRepository.save(comment));
@@ -56,11 +56,11 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
-    private void assertVisible(Document doc, String currentUserEmail) {
-        if (doc.getVisibility() == Visibility.PUBLIC) {
+    private void assertVisible(Document document, String currentUserEmail) {
+        if (document.getVisibility() == Visibility.PUBLIC) {
             return;
         }
-        if (currentUserEmail != null && currentUserEmail.equals(doc.getAuthor().getEmail())) {
+        if (currentUserEmail != null && currentUserEmail.equals(document.getAuthor().getEmail())) {
             return;
         }
         throw new AccessForbiddenException("Access denied");

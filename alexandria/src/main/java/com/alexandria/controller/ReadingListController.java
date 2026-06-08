@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -44,7 +45,7 @@ public class ReadingListController {
     @PostMapping
     public ResponseEntity<ReadingListResponse> createReadingList(@Valid @RequestBody CreateReadingListRequest request) {
         ReadingListResponse response = readingListService.createReadingList(request, securityUtils.getCurrentUser());
-        java.net.URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(response.id())
                 .toUri();
@@ -80,9 +81,9 @@ public class ReadingListController {
     }
 
     @PreAuthorize("@ownership.isReadingListOwner(#id, principal)")
-    @DeleteMapping("/{id}/items/{docId}")
-    public ResponseEntity<Void> removeItem(@PathVariable UUID id, @PathVariable UUID docId) {
-        readingListService.removeItem(id, docId);
+    @DeleteMapping("/{id}/items/{documentId}")
+    public ResponseEntity<Void> removeItem(@PathVariable UUID id, @PathVariable UUID documentId) {
+        readingListService.removeItem(id, documentId);
         return ResponseEntity.noContent().build();
     }
 }

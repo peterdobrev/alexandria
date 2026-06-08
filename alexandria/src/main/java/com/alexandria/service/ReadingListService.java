@@ -86,11 +86,11 @@ public class ReadingListService {
         return readingListMapper.toItemResponse(readingListItemRepository.save(item));
     }
 
-    public void removeItem(UUID listId, UUID docId) {
+    public void removeItem(UUID listId, UUID documentId) {
         readingListRepository.findById(listId)
                 .orElseThrow(() -> new ReadingListNotFoundException(listId));
-        ReadingListItem item = readingListItemRepository.findByReadingListIdAndDocumentId(listId, docId)
-                .orElseThrow(() -> new ReadingListItemNotFoundException(listId, docId));
+        ReadingListItem item = readingListItemRepository.findByReadingListIdAndDocumentId(listId, documentId)
+                .orElseThrow(() -> new ReadingListItemNotFoundException(listId, documentId));
         readingListItemRepository.delete(item);
     }
 }

@@ -83,9 +83,9 @@ public class DocumentController {
 
     @PostMapping("/article")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<DocumentDetail> createArticle(@Valid @RequestBody CreateArticleRequest req) {
+    public ResponseEntity<DocumentDetail> createArticle(@Valid @RequestBody CreateArticleRequest request) {
         UUID currentUserId = securityUtils.getCurrentUser().getId();
-        DocumentDetail detail = documentService.createArticle(req, currentUserId);
+        DocumentDetail detail = documentService.createArticle(request, currentUserId);
         return ResponseEntity
                 .created(URI.create("/api/documents/" + detail.id()))
                 .body(detail);
@@ -94,8 +94,8 @@ public class DocumentController {
     @PreAuthorize("@ownership.isDocumentOwner(#id, principal)")
     @PutMapping("/{id}")
     public DocumentDetail update(@PathVariable UUID id,
-                                 @Valid @RequestBody UpdateDocumentRequest req) {
-        return documentService.update(id, req);
+                                 @Valid @RequestBody UpdateDocumentRequest request) {
+        return documentService.update(id, request);
     }
 
     @PreAuthorize("@ownership.isDocumentOwner(#id, principal) or hasRole('ADMIN')")
