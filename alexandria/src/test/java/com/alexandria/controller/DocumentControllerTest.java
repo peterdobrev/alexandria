@@ -1,38 +1,48 @@
 package com.alexandria.controller;
 
-import com.alexandria.dto.CreateDocumentRequest;
-import com.alexandria.dto.DocumentResponse;
-import com.alexandria.dto.DocumentSummaryResponse;
-import com.alexandria.dto.UpdateDocumentRequest;
-import com.alexandria.dto.UserResponse;
+import com.alexandria.dto.common.PageResponse;
+import com.alexandria.dto.document.AuthorSummary;
+import com.alexandria.dto.document.CreateArticleRequest;
+import com.alexandria.dto.document.DocumentDetail;
+import com.alexandria.dto.document.DocumentSummary;
+import com.alexandria.dto.document.UpdateDocumentRequest;
 import com.alexandria.entity.User;
+import com.alexandria.entity.Visibility;
 import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.DocumentService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,100 +62,137 @@ class DocumentControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(classUnderTest)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(
+                        new PageableHandlerMethodArgumentResolver(),
+                        new AuthenticationPrincipalArgumentResolver())
                 .build();
     }
 
-    @Test
-    void getDocuments_noFilters_returns200WithPage() throws Exception {
-        DocumentSummaryResponse summary = documentSummary();
-
-        when(documentService.getDocuments(any(), any(), any(), any(), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(summary), PageRequest.of(0, 20), 1));
-
-        mockMvc.perform(get("/api/documents"))
-                .andExpect(status().isOk());
+    @AfterEach
+    void clearContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
-    void getDocument_existingDocument_returns200() throws Exception {
-        UUID id = UUID.randomUUID();
-        DocumentResponse response = documentResponse(id);
+    void list_anonymous_returns200WithPage() throws Exception {
+        DocumentSummary summary = documentSummary();
+        PageResponse<DocumentSummary> page = new PageResponse<>(
+                List.of(summary), 0, 20, 1L, 1, true);
 
-        when(documentService.getDocument(id)).thenReturn(response);
+        when(documentService.list(any(DocumentService.DocumentFilters.class), any(), eq(null)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/documents"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("Title"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void get_existingDocument_returns200WithBody() throws Exception {
+        UUID id = UUID.randomUUID();
+        DocumentDetail detail = documentDetail(id);
+
+        when(documentService.get(eq(id), eq(null))).thenReturn(detail);
 
         mockMvc.perform(get("/api/documents/" + id))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.title").value("Title"))
-                .andExpect(jsonPath("$.type").value("PDF"));
+                .andExpect(jsonPath("$.type").value("ARTICLE"));
     }
 
     @Test
-    void createDocument_validRequest_returns201() throws Exception {
+    void createArticle_validRequest_returns201WithLocation() throws Exception {
+        UUID id = UUID.randomUUID();
         User currentUser = new User();
-        DocumentResponse response = documentResponse(UUID.randomUUID());
+        currentUser.setId(UUID.randomUUID());
+        DocumentDetail detail = documentDetail(id);
 
         when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(documentService.createDocument(any(CreateDocumentRequest.class), any(User.class))).thenReturn(response);
+        when(documentService.createArticle(any(CreateArticleRequest.class), eq(currentUser.getId())))
+                .thenReturn(detail);
 
-        mockMvc.perform(post("/api/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"Title\",\"description\":\"Desc\",\"type\":\"PDF\",\"fileUrl\":\"http://example.com/file.pdf\",\"categoryIds\":[]}"))
+        mockMvc.perform(post("/api/documents/article")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Title\",\"description\":\"Desc\",\"type\":\"ARTICLE\","
+                                + "\"body\":\"Body content\",\"categoryIds\":[],\"visibility\":\"PUBLIC\"}"))
                 .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/documents/" + id))
+                .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.title").value("Title"));
     }
 
     @Test
-    void createDocument_blankTitle_returns400() throws Exception {
-        mockMvc.perform(post("/api/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"\",\"type\":\"PDF\",\"fileUrl\":\"http://example.com/file.pdf\",\"categoryIds\":[]}"))
+    void createArticle_blankTitle_returns400() throws Exception {
+        mockMvc.perform(post("/api/documents/article")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"\",\"type\":\"ARTICLE\",\"body\":\"Body\",\"categoryIds\":[]}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void createDocument_invalidFileUrl_returns400() throws Exception {
-        mockMvc.perform(post("/api/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"Title\",\"type\":\"PDF\",\"fileUrl\":\"not-a-url\",\"categoryIds\":[]}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void updateDocument_validRequest_returns200() throws Exception {
+    void update_validRequest_returns200WithBody() throws Exception {
         UUID id = UUID.randomUUID();
-        User currentUser = new User();
-        DocumentResponse response = documentResponse(id);
+        DocumentDetail detail = documentDetail(id);
 
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(documentService.updateDocument(eq(id), any(UpdateDocumentRequest.class), any(User.class))).thenReturn(response);
+        when(documentService.update(eq(id), any(UpdateDocumentRequest.class))).thenReturn(detail);
 
         mockMvc.perform(put("/api/documents/" + id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"New Title\"}"))
-                .andExpect(status().isOk());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"New Title\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()));
     }
 
     @Test
-    void deleteDocument_returns204() throws Exception {
+    void delete_authenticatedNonAdmin_returns204AndCallsServiceWithIsAdminFalse() throws Exception {
         UUID id = UUID.randomUUID();
-        User currentUser = new User();
-
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
+        UserDetails principal = new org.springframework.security.core.userdetails.User(
+                "a@b.com", "pw", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, "pw", principal.getAuthorities()));
 
         mockMvc.perform(delete("/api/documents/" + id))
                 .andExpect(status().isNoContent());
+
+        ArgumentCaptor<Boolean> isAdminCaptor = ArgumentCaptor.forClass(Boolean.class);
+        verify(documentService).delete(eq(id), isAdminCaptor.capture());
+        assertThat(isAdminCaptor.getValue()).isFalse();
     }
 
-    private DocumentSummaryResponse documentSummary() {
-        return new DocumentSummaryResponse(UUID.randomUUID(), "Title", "PDF",
-                new UserResponse(UUID.randomUUID(), "author@test.com", "Author", Instant.now()),
-                List.of(), Instant.now());
+    private DocumentSummary documentSummary() {
+        return new DocumentSummary(
+                UUID.randomUUID(),
+                "Title",
+                "Desc",
+                "ARTICLE",
+                Visibility.PUBLIC,
+                new AuthorSummary(UUID.randomUUID(), "Author"),
+                Set.of(),
+                false,
+                true,
+                null,
+                null,
+                Instant.now(),
+                Instant.now());
     }
 
-    private DocumentResponse documentResponse(UUID id) {
-        return new DocumentResponse(id, "Title", "Desc", "PDF", "http://example.com/file.pdf",
-                new UserResponse(UUID.randomUUID(), "author@test.com", "Author", Instant.now()),
-                List.of(), Instant.now(), Instant.now());
+    private DocumentDetail documentDetail(UUID id) {
+        return new DocumentDetail(
+                id,
+                "Title",
+                "Desc",
+                "ARTICLE",
+                Visibility.PUBLIC,
+                new AuthorSummary(UUID.randomUUID(), "Author"),
+                Set.of(),
+                false,
+                true,
+                null,
+                null,
+                "Body content",
+                Instant.now(),
+                Instant.now());
     }
 }
