@@ -74,13 +74,13 @@ class RecommendationControllerTest {
 
     @Test
     void given_pageSizeAboveFifty_when_getRecommendations_then_returns400() throws Exception {
-        User currentUser = userWithId();
-
-        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
-        when(recommendationService.getRecommendations(eq(currentUser.getId()), any(Pageable.class)))
-                .thenThrow(new IllegalArgumentException("Recommendations page size exceeds the maximum of 50"));
-
         mockMvc.perform(get("/api/recommendations").param("size", "51"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void given_pageNumberAboveLimit_when_getRecommendations_then_returns400() throws Exception {
+        mockMvc.perform(get("/api/recommendations").param("page", "201"))
                 .andExpect(status().isBadRequest());
     }
 

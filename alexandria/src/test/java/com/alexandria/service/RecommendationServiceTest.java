@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,7 +22,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -139,12 +137,25 @@ class RecommendationServiceTest {
     }
 
     @Test
-    void given_pageSizeOverFifty_when_getRecommendations_then_throwsIllegalArgumentException() {
-        Pageable pageable = PageRequest.of(0, 51);
+    void given_documentDeletedConcurrentlyDuringPagination_when_getRecommendations_then_lastFlagComesFromTotalPages() {
+        // total=40 across 2 pages of 20; on page 0 a doc was deleted between
+        // the score query and findAllById, so content.size()==19 < pageSize.
+        // last must be false because we are still on page 0 of 2.
+        UUID present = UUID.randomUUID();
+        UUID stale = UUID.randomUUID();
+        Document doc = docWithId(present);
+        DocumentSummary summary = summaryWithId(present);
 
-        assertThatThrownBy(() -> classUnderTest.getRecommendations(userId, pageable))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("page size");
+        when(interactionRepository.countByUserId(userId)).thenReturn(5L);
+        when(queryRunner.runScoreQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of(present, stale));
+        when(queryRunner.countScoreQuery(userId)).thenReturn(40L);
+        when(documentRepository.findAllById(List.of(present, stale))).thenReturn(List.of(doc));
+        when(documentMapper.toSummary(doc)).thenReturn(summary);
+
+        PageResponse<DocumentSummary> result = classUnderTest.getRecommendations(userId, PageRequest.of(0, 20));
+
+        assertThat(result.last()).isFalse();
+        assertThat(result.totalPages()).isEqualTo(2);
     }
 
     // --- helpers ---

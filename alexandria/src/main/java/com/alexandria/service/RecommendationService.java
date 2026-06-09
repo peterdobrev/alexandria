@@ -22,19 +22,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RecommendationService {
 
-    private static final int MAX_PAGE_SIZE = 50;
-
     private final InteractionRepository interactionRepository;
     private final RecommendationQueryRunner queryRunner;
     private final DocumentRepository documentRepository;
     private final DocumentMapper documentMapper;
 
     public PageResponse<DocumentSummary> getRecommendations(UUID userId, Pageable pageable) {
-        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
-            throw new IllegalArgumentException(
-                    "Recommendations page size exceeds the maximum of " + MAX_PAGE_SIZE);
-        }
-
         int pageSize = pageable.getPageSize();
         int offset = (int) pageable.getOffset();
         int pageNumber = pageable.getPageNumber();
@@ -62,7 +55,7 @@ public class RecommendationService {
                 : loadAndOrder(ids);
 
         int totalPages = pageSize == 0 ? 0 : (int) Math.ceil((double) total / pageSize);
-        boolean last = (offset + content.size()) >= total;
+        boolean last = totalPages == 0 || pageNumber + 1 >= totalPages;
 
         return new PageResponse<>(content, pageNumber, pageSize, total, totalPages, last);
     }

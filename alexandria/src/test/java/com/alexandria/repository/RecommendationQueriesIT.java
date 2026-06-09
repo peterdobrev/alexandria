@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,14 +41,13 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
     private JpaRecommendationQueryRunner runner;
 
     @Test
-    void given_userBookmarkedAndAnotherUserBookmarkedSameDoc_when_runScoreQuery_then_correlatedDocScoresHigher() {
+    void given_userBookmarkedAndAnotherUserBookmarkedSameDoc_when_runScoreQuery_then_correlatedDocSurfacesAndUncorrelatedDoesNot() {
         // Alice and Bob both bookmark "shared". Bob also bookmarks "correlated".
-        // Carol only bookmarks "noise". When recommending for Alice, "correlated"
-        // should rank above "noise".
+        // Carol only bookmarks "noise" — no overlap with Alice's history, so its
+        // score is 0 and the WHERE score > 0 filter excludes it.
         User alice = persistUser("alice@example.com");
         User bob = persistUser("bob@example.com");
         User carol = persistUser("carol@example.com");
-
         User authorA = persistUser("authorA@example.com");
         User authorB = persistUser("authorB@example.com");
 
@@ -66,17 +66,14 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
 
         assertThat(ids).contains(correlated.getId());
         assertThat(ids).doesNotContain(shared.getId());      // already interacted with
-        // "correlated" should appear before "noise" if both surface
-        if (ids.contains(noise.getId())) {
-            assertThat(ids.indexOf(correlated.getId())).isLessThan(ids.indexOf(noise.getId()));
-        }
+        assertThat(ids).doesNotContain(noise.getId());       // no overlap with history → score 0
     }
 
     @Test
     void given_viewSpamUpToTenViews_when_runScoreQuery_then_capsContributionAtFiveViews() {
         // Alice and Bob both view "shared". Bob also views "candidate".
-        // Carol view-spams "candidate" 10 times AND "shared" 10 times. The cap
-        // means Carol's pair contributes the same as 5+5 — not 10+10. We simply
+        // Carol view-spams "candidate" and "shared" 10 times each. The cap
+        // means Carol's pair contributes the same as 5+5 — not 10+10. We
         // confirm the query does not crash and "candidate" surfaces.
         User alice = persistUser("alice@example.com");
         User bob = persistUser("bob@example.com");
@@ -89,10 +86,8 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
         persistInteraction(alice, shared, InteractionKind.VIEW);
         persistInteraction(bob, shared, InteractionKind.VIEW);
         persistInteraction(bob, candidate, InteractionKind.VIEW);
-        for (int i = 0; i < 10; i++) {
-            persistInteraction(carol, shared, InteractionKind.VIEW);
-            persistInteraction(carol, candidate, InteractionKind.VIEW);
-        }
+        persistViews(carol, shared, 10);
+        persistViews(carol, candidate, 10);
 
         em.flush();
 
@@ -124,10 +119,9 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    void given_userWithNoInteractionsButCommentedOnHistoryCategory_when_runColdStart_then_returnsPopularInThatCategory() {
+    void given_userCommentedOnTechCategory_when_runColdStart_then_returnsBookmarkedTechAheadOfUnbookmarkedAndExcludesOtherCategories() {
         User alice = persistUser("alice@example.com");
         User bob = persistUser("bob@example.com");
-
         User author = persistUser("author@example.com");
 
         Category tech = persistCategory("tech");
@@ -137,28 +131,23 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
         Document techDoc2 = persistDoc(author, "tech-2", Visibility.PUBLIC, tech);
         Document cookingDoc = persistDoc(author, "cook-1", Visibility.PUBLIC, cooking);
 
-        // Alice has commented on a tech doc — engagement signal
         persistComment(alice, techDoc1);
-        // Bob bookmarks techDoc2, making it the more popular tech doc
         persistInteraction(bob, techDoc2, InteractionKind.BOOKMARK);
 
         em.flush();
 
         List<UUID> ids = runner.runColdStartQuery(alice.getId(), 50, 0);
 
-        assertThat(ids).contains(techDoc2.getId());
-        // techDoc2 (bookmarked once) should rank above techDoc1 (no interactions)
-        if (ids.contains(techDoc1.getId())) {
-            assertThat(ids.indexOf(techDoc2.getId())).isLessThan(ids.indexOf(techDoc1.getId()));
-        }
-        // cookingDoc may or may not appear depending on whether affinity matches
-        assertThat(cookingDoc).isNotNull();
+        // Alice's affinity is "tech" — only tech docs qualify, ordered by popularity DESC
+        assertThat(ids).containsExactly(techDoc2.getId(), techDoc1.getId());
+        assertThat(ids).doesNotContain(cookingDoc.getId());
     }
 
     @Test
-    void given_brandNewUserWithNoEngagement_when_runColdStart_then_returnsGloballyPopular() {
-        // Alice has zero engagement of any kind. Cold start should fall through
-        // to globally popular.
+    void given_brandNewUserWithNoEngagement_when_runColdStart_then_returnsGloballyPopularByBookmarkCountThenRecency() {
+        // Alice has zero engagement of any kind. Cold start falls through to
+        // globally popular: all PUBLIC non-self-authored docs, ordered by
+        // popularity DESC then created_at DESC.
         User alice = persistUser("alice@example.com");
         User bob = persistUser("bob@example.com");
         User author = persistUser("author@example.com");
@@ -172,10 +161,7 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
 
         List<UUID> ids = runner.runColdStartQuery(alice.getId(), 50, 0);
 
-        assertThat(ids).contains(popular.getId());
-        if (ids.contains(quiet.getId())) {
-            assertThat(ids.indexOf(popular.getId())).isLessThan(ids.indexOf(quiet.getId()));
-        }
+        assertThat(ids).containsExactly(popular.getId(), quiet.getId());
     }
 
     // --- helpers ---
@@ -226,6 +212,10 @@ class RecommendationQueriesIT extends AbstractPostgresIntegrationTest {
         interaction.setDocument(document);
         interaction.setKind(kind);
         em.persist(interaction);
+    }
+
+    private void persistViews(User user, Document document, int times) {
+        IntStream.range(0, times).forEach(i -> persistInteraction(user, document, InteractionKind.VIEW));
     }
 
     private void persistComment(User author, Document document) {

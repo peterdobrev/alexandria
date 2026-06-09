@@ -9,6 +9,7 @@ import com.alexandria.repository.CategoryRepository;
 import com.alexandria.repository.CommentRepository;
 import com.alexandria.repository.DocumentRepository;
 import com.alexandria.repository.InteractionRepository;
+import com.alexandria.repository.JpaRecommendationQueryRunner;
 import com.alexandria.repository.ReadingListItemRepository;
 import com.alexandria.repository.ReadingListRepository;
 import com.alexandria.repository.RecommendationQueryRunner;
@@ -23,6 +24,7 @@ import com.alexandria.service.ReadingListService;
 import com.alexandria.service.RecommendationService;
 import com.alexandria.service.UserService;
 import com.alexandria.storage.FileStorageService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,7 +48,7 @@ public class ServiceConfig {
     private final DocumentMapper documentMapper;
     private final ReadingListMapper readingListMapper;
     private final UserMapper userMapper;
-    private final RecommendationQueryRunner recommendationQueryRunner;
+    private final EntityManager entityManager;
 
     @Bean
     public CategoryService categoryService() {
@@ -76,9 +78,14 @@ public class ServiceConfig {
     }
 
     @Bean
+    public RecommendationQueryRunner recommendationQueryRunner() {
+        return new JpaRecommendationQueryRunner(entityManager);
+    }
+
+    @Bean
     public RecommendationService recommendationService() {
         return new RecommendationService(
-                interactionRepository, recommendationQueryRunner, documentRepository, documentMapper);
+                interactionRepository, recommendationQueryRunner(), documentRepository, documentMapper);
     }
 
     @Bean

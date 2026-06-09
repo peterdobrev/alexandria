@@ -28,12 +28,23 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RecommendationController {
 
+    static final int MAX_PAGE_SIZE = 50;
+    static final int MAX_PAGE_NUMBER = 200;
+
     private final RecommendationService recommendationService;
     private final InteractionService interactionService;
     private final SecurityUtils securityUtils;
 
     @GetMapping("/recommendations")
     public ResponseEntity<PageResponse<DocumentSummary>> getRecommendations(Pageable pageable) {
+        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
+            throw new IllegalArgumentException(
+                    "Recommendations page size exceeds the maximum of " + MAX_PAGE_SIZE);
+        }
+        if (pageable.getPageNumber() > MAX_PAGE_NUMBER) {
+            throw new IllegalArgumentException(
+                    "Recommendations page number exceeds the maximum of " + MAX_PAGE_NUMBER);
+        }
         User currentUser = securityUtils.getCurrentUser();
         return ResponseEntity.ok(recommendationService.getRecommendations(currentUser.getId(), pageable));
     }
