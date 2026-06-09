@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: "008"
+      author: alexandria
+      changes:
+        - createTable:
+            tableName: user_document_interactions
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: document_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: kind
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: interacted_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: user_document_interactions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_udi_user
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: user_document_interactions
+            baseColumnNames: document_id
+            referencedTableName: documents
+            referencedColumnNames: id
+            constraintName: fk_udi_document
+            onDelete: CASCADE
+        - sql:
+            sql: "ALTER TABLE user_document_interactions ADD CONSTRAINT chk_udi_kind CHECK (kind IN ('VIEW','BOOKMARK'))"
+        - createIndex:
+            tableName: user_document_interactions
+            indexName: idx_udi_user_doc_kind
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: document_id
+              - column:
+                  name: kind
+        - createIndex:
+            tableName: user_document_interactions
+            indexName: idx_udi_document
+            columns:
+              - column:
+                  name: document_id

@@ -35,6 +35,7 @@ public class ReadingListService {
     private final ReadingListItemRepository readingListItemRepository;
     private final DocumentRepository documentRepository;
     private final ReadingListMapper readingListMapper;
+    private final InteractionService interactionService;
 
     @Transactional(readOnly = true)
     public Page<ReadingListSummaryResponse> getReadingLists(User currentUser, Pageable pageable) {
@@ -83,7 +84,9 @@ public class ReadingListService {
         item.setReadingList(list);
         item.setDocument(document);
         item.setAddedAt(Instant.now());
-        return readingListMapper.toItemResponse(readingListItemRepository.save(item));
+        ReadingListItemResponse response = readingListMapper.toItemResponse(readingListItemRepository.save(item));
+        interactionService.logBookmark(list.getUser(), document);
+        return response;
     }
 
     public void removeItem(UUID listId, UUID documentId) {

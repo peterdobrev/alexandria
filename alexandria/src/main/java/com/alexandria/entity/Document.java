@@ -80,6 +80,9 @@ public class Document {
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
+    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserDocumentInteraction> interactions;
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
