@@ -28,6 +28,20 @@ This page lists endpoint groups; for request/response details see Swagger.
 - PUT    /api/categories/{id}                 Admin
 - DELETE /api/categories/{id}                 Admin
 
-## Reading Lists (Phase 2 — see sub-spec)
-## Annotations (Phase 4 — see sub-spec)
-## Recommendations (Phase 5 — see sub-spec)
+## Reading Lists (Phase 2)
+- GET    /api/reading-lists                          Auth (own lists)
+- POST   /api/reading-lists                          Auth
+- GET    /api/reading-lists/{id}                     Owner
+- PUT    /api/reading-lists/{id}                     Owner
+- DELETE /api/reading-lists/{id}                     Owner
+- POST   /api/reading-lists/{id}/items               Owner
+- DELETE /api/reading-lists/{id}/items/{documentId}  Owner
+
+## Comments (Phase 3)
+- GET    /api/documents/{documentId}/comments        Visibility-aware
+- POST   /api/documents/{documentId}/comments        Auth
+- DELETE /api/documents/{documentId}/comments/{commentId}  Owner | Admin
+
+## Recommendations (Phase 4)
+- POST   /api/documents/{id}/interactions    Auth   ({ kind: VIEW })
+- GET    /api/recommendations                Auth
