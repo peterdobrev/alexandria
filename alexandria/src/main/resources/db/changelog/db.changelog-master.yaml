@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/changes/006-fix-document-categories-fk.yaml
   - include:
       file: db/changelog/changes/007-add-comments.yaml
+  - include:
+      file: db/changelog/changes/008-add-user-document-interactions.yaml
