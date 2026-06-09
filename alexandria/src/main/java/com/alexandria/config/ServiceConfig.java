@@ -8,15 +8,19 @@ import com.alexandria.mapper.UserMapper;
 import com.alexandria.repository.CategoryRepository;
 import com.alexandria.repository.CommentRepository;
 import com.alexandria.repository.DocumentRepository;
+import com.alexandria.repository.InteractionRepository;
 import com.alexandria.repository.ReadingListItemRepository;
 import com.alexandria.repository.ReadingListRepository;
+import com.alexandria.repository.RecommendationQueryRunner;
 import com.alexandria.repository.UserRepository;
 import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.CategoryService;
 import com.alexandria.service.CommentService;
 import com.alexandria.service.DocumentService;
+import com.alexandria.service.InteractionService;
 import com.alexandria.service.OwnershipService;
 import com.alexandria.service.ReadingListService;
+import com.alexandria.service.RecommendationService;
 import com.alexandria.service.UserService;
 import com.alexandria.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +35,7 @@ public class ServiceConfig {
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
     private final DocumentRepository documentRepository;
+    private final InteractionRepository interactionRepository;
     private final ReadingListRepository readingListRepository;
     private final ReadingListItemRepository readingListItemRepository;
     private final UserRepository userRepository;
@@ -41,6 +46,7 @@ public class ServiceConfig {
     private final DocumentMapper documentMapper;
     private final ReadingListMapper readingListMapper;
     private final UserMapper userMapper;
+    private final RecommendationQueryRunner recommendationQueryRunner;
 
     @Bean
     public CategoryService categoryService() {
@@ -58,8 +64,21 @@ public class ServiceConfig {
     }
 
     @Bean
+    public InteractionService interactionService() {
+        return new InteractionService(interactionRepository, documentRepository);
+    }
+
+    @Bean
     public ReadingListService readingListService() {
-        return new ReadingListService(readingListRepository, readingListItemRepository, documentRepository, readingListMapper);
+        return new ReadingListService(
+                readingListRepository, readingListItemRepository, documentRepository,
+                readingListMapper, interactionService());
+    }
+
+    @Bean
+    public RecommendationService recommendationService() {
+        return new RecommendationService(
+                interactionRepository, recommendationQueryRunner, documentRepository, documentMapper);
     }
 
     @Bean

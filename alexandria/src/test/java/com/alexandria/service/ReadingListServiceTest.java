@@ -55,13 +55,16 @@ class ReadingListServiceTest {
     private DocumentRepository documentRepository;
     @Mock
     private ReadingListMapper readingListMapper;
+    @Mock
+    private InteractionService interactionService;
 
     private ReadingListService classUnderTest;
 
     @BeforeEach
     void setUp() {
         classUnderTest = new ReadingListService(
-                readingListRepository, readingListItemRepository, documentRepository, readingListMapper);
+                readingListRepository, readingListItemRepository, documentRepository,
+                readingListMapper, interactionService);
     }
 
     @Test
@@ -225,6 +228,26 @@ class ReadingListServiceTest {
                 .isInstanceOf(DocumentNotFoundException.class);
 
         verify(readingListItemRepository, never()).save(any());
+    }
+
+    @Test
+    void given_addItemSucceeds_when_addItem_then_logsBookmarkInteraction() {
+        UUID listId = UUID.randomUUID();
+        UUID docId = UUID.randomUUID();
+        User owner = userWithId();
+        ReadingList list = new ReadingList();
+        list.setUser(owner);
+        Document document = new Document();
+        document.setId(docId);
+
+        when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
+        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(document));
+        when(readingListItemRepository.save(any(ReadingListItem.class))).thenReturn(new ReadingListItem());
+        when(readingListMapper.toItemResponse(any(ReadingListItem.class))).thenReturn(itemResponse(docId));
+
+        classUnderTest.addItem(listId, new AddReadingListItemRequest(docId));
+
+        verify(interactionService).logBookmark(owner, document);
     }
 
     @Test
