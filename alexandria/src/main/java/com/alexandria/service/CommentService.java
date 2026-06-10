@@ -12,6 +12,7 @@ import com.alexandria.exception.DocumentNotFoundException;
 import com.alexandria.mapper.CommentMapper;
 import com.alexandria.repository.CommentRepository;
 import com.alexandria.repository.DocumentRepository;
+import com.alexandria.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final DocumentRepository documentRepository;
+    private final UserRepository userRepository;
     private final CommentMapper commentMapper;
 
     @Transactional(readOnly = true)
@@ -40,9 +42,10 @@ public class CommentService {
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(documentId));
         assertVisible(document, currentUser.getEmail());
+        User author = userRepository.getReferenceById(currentUser.getId());
         Comment comment = new Comment();
         comment.setDocument(document);
-        comment.setAuthor(currentUser);
+        comment.setAuthor(author);
         comment.setBody(request.body());
         return commentMapper.toResponse(commentRepository.save(comment));
     }
