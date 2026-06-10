@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap, catchError } from 'rxjs/operators';
 import { EMPTY } from 'rxjs';
@@ -23,7 +23,11 @@ export class AuthService {
 
   constructor() {
     if (this.token()) {
-      this.fetchCurrentUser().subscribe();
+      // Defer to a microtask so AuthService finishes constructing before this
+      // HTTP call runs the interceptor (which injects AuthService). Otherwise the
+      // re-entrant injection throws a circular-dependency error that gets swallowed
+      // here and wipes the token — logging the user out on every page load.
+      queueMicrotask(() => this.fetchCurrentUser().subscribe());
     }
   }
 
@@ -59,9 +63,12 @@ export class AuthService {
   private fetchCurrentUser(): Observable<UserSummary> {
     return this.http.get<UserSummary>(`${environment.apiUrl}/users/me`).pipe(
       tap(user => this.currentUser.set(user)),
-      catchError(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        this.token.set(null);
+      catchError((err: unknown) => {
+        // Only drop the session on a genuine auth failure, not on transient errors.
+        if (err instanceof HttpErrorResponse && err.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          this.token.set(null);
+        }
         return EMPTY;
       }),
     );
