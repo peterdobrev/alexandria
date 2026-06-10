@@ -105,9 +105,7 @@ public class DocumentService {
             document.setVisibility(request.visibility());
         }
         if (request.categoryIds() != null) {
-            List<Category> categories = resolveCategories(request.categoryIds());
-            document.getDocumentCategories().clear();
-            document.getDocumentCategories().addAll(buildDocumentCategories(document, categories));
+            reconcileCategories(document, resolveCategories(request.categoryIds()));
         }
 
         Document saved = documentRepository.save(document);
@@ -213,6 +211,32 @@ public class DocumentService {
             result.add(dc);
         }
         return result;
+    }
+
+    private void reconcileCategories(Document document, List<Category> desiredCategories) {
+        Set<UUID> desiredIds = new HashSet<>();
+        for (Category category : desiredCategories) {
+            desiredIds.add(category.getId());
+        }
+
+        // Drop associations that are no longer wanted (orphanRemoval deletes them).
+        document.getDocumentCategories()
+                .removeIf(dc -> !desiredIds.contains(dc.getCategory().getId()));
+
+        // Add only the genuinely new categories. Leaving existing associations in place
+        // avoids deleting and re-inserting the same (document, category) row in one flush,
+        // which would violate the composite primary key.
+        Set<UUID> existingIds = new HashSet<>();
+        for (DocumentCategory dc : document.getDocumentCategories()) {
+            existingIds.add(dc.getCategory().getId());
+        }
+        List<Category> categoriesToAdd = new ArrayList<>();
+        for (Category category : desiredCategories) {
+            if (!existingIds.contains(category.getId())) {
+                categoriesToAdd.add(category);
+            }
+        }
+        document.getDocumentCategories().addAll(buildDocumentCategories(document, categoriesToAdd));
     }
 
     public record DocumentFilters(String type, UUID categoryId, UUID authorId, String search) {}
