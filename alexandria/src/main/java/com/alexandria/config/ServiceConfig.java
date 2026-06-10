@@ -57,7 +57,7 @@ public class ServiceConfig {
 
     @Bean
     public CommentService commentService() {
-        return new CommentService(commentRepository, documentRepository, commentMapper);
+        return new CommentService(commentRepository, documentRepository, userRepository, commentMapper);
     }
 
     @Bean
