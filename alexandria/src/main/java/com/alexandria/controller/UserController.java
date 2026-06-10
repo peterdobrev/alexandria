@@ -2,6 +2,7 @@ package com.alexandria.controller;
 
 import com.alexandria.dto.user.UpdateUserRequest;
 import com.alexandria.dto.user.UserSummary;
+import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,12 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final SecurityUtils securityUtils;
+
+    @GetMapping("/me")
+    public ResponseEntity<UserSummary> getCurrentUser() {
+        return ResponseEntity.ok(userService.get(securityUtils.getCurrentUser().getId()));
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserSummary> getUser(@PathVariable UUID id) {
