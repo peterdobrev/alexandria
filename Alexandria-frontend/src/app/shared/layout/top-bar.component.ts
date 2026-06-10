@@ -15,7 +15,7 @@ import { AvatarComponent } from '../ui/avatar.component';
         <span class="brand-name">Alexandria</span>
       </a>
 
-      <form class="search" (ngSubmit)="search()">
+      <form class="search" (submit)="$event.preventDefault(); search()">
         <span class="search-icon">⌕</span>
         <input
           type="search"

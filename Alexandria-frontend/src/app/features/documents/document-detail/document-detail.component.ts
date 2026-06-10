@@ -83,7 +83,7 @@ import type { DocumentDetail } from '../../../core/models/document.model';
         <h2>Discussion</h2>
 
         @if (auth.isAuthenticated()) {
-          <form class="comment-form" (ngSubmit)="addComment()">
+          <form class="comment-form" (submit)="$event.preventDefault(); addComment()">
             @if (auth.user(); as user) {
               <app-avatar [name]="user.displayName" [size]="36" />
             }

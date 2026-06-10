@@ -17,7 +17,7 @@ import type { ReadingListSummaryResponse } from '../../../core/models/reading-li
         <p class="text-secondary">Curated shelves of documents you want to keep.</p>
       </header>
 
-      <form class="create-form" (ngSubmit)="createList()">
+      <form class="create-form" (submit)="$event.preventDefault(); createList()">
         <input
           type="text"
           class="input"
