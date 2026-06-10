@@ -13,6 +13,7 @@ import com.alexandria.exception.ForbiddenException;
 import com.alexandria.mapper.CommentMapper;
 import com.alexandria.repository.CommentRepository;
 import com.alexandria.repository.DocumentRepository;
+import com.alexandria.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,13 +41,14 @@ class CommentServiceTest {
 
     @Mock private CommentRepository commentRepository;
     @Mock private DocumentRepository documentRepository;
+    @Mock private UserRepository userRepository;
     @Mock private CommentMapper commentMapper;
 
     private CommentService classUnderTest;
 
     @BeforeEach
     void setUp() {
-        classUnderTest = new CommentService(commentRepository, documentRepository, commentMapper);
+        classUnderTest = new CommentService(commentRepository, documentRepository, userRepository, commentMapper);
     }
 
     @Test
@@ -111,11 +113,13 @@ class CommentServiceTest {
         UUID docId = UUID.randomUUID();
         Document doc = publicDoc(docId, "author@example.com");
         User currentUser = userWithEmail("commenter@example.com");
+        User authorReference = userWithEmail("commenter@example.com");
         CreateCommentRequest request = new CreateCommentRequest("Nice doc!");
         Comment saved = new Comment();
         CommentResponse response = commentResponse();
 
         when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(userRepository.getReferenceById(any(UUID.class))).thenReturn(authorReference);
         when(commentRepository.save(any(Comment.class))).thenReturn(saved);
         when(commentMapper.toResponse(any(Comment.class))).thenReturn(response);
 
@@ -127,7 +131,7 @@ class CommentServiceTest {
         verify(commentRepository).save(captor.capture());
         Comment toSave = captor.getValue();
         assertThat(toSave.getDocument()).isSameAs(doc);
-        assertThat(toSave.getAuthor()).isSameAs(currentUser);
+        assertThat(toSave.getAuthor()).isSameAs(authorReference);
         assertThat(toSave.getBody()).isEqualTo("Nice doc!");
     }
 
