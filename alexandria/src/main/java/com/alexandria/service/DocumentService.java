@@ -92,7 +92,7 @@ public class DocumentService {
     }
 
     public DocumentDetail update(UUID id, UpdateDocumentRequest request) {
-        Document document = documentRepository.findById(id)
+        Document document = documentRepository.findWithCategoriesById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
 
         if (request.title() != null) {
@@ -134,7 +134,7 @@ public class DocumentService {
 
     @Transactional(readOnly = true)
     public DocumentDetail get(UUID id, UUID currentUserId) {
-        Document document = documentRepository.findById(id)
+        Document document = documentRepository.findWithCategoriesById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
         if (document.getVisibility() == Visibility.PRIVATE
                 && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {

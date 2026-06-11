@@ -19,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
       @if (auth.isAuthenticated()) {
         <a routerLink="/reading-lists" routerLinkActive="active" class="nav-item">
           <svg viewBox="0 0 24 24" class="ic"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg>
-          <span class="label">Saved</span>
+          <span class="label">Collections</span>
         </a>
         <a [routerLink]="['/users', auth.user()?.id]" routerLinkActive="active" class="nav-item">
           <svg viewBox="0 0 24 24" class="ic"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></svg>
@@ -30,12 +30,9 @@ import { AuthService } from '../../core/services/auth.service';
   `,
   styles: `
     .side-nav {
-      position: sticky;
-      top: calc(var(--header-height) + 1.25rem);
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      width: var(--sidebar-width);
       padding: 0 0.75rem;
     }
     .nav-item {
