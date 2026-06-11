@@ -6,8 +6,11 @@ import com.alexandria.dto.document.CategorySummary;
 import com.alexandria.dto.document.CreateArticleRequest;
 import com.alexandria.dto.document.DocumentDetail;
 import com.alexandria.dto.document.DocumentSummary;
+import com.alexandria.dto.document.UpdateDocumentRequest;
 import com.alexandria.entity.Category;
 import com.alexandria.entity.Document;
+import com.alexandria.entity.DocumentCategory;
+import com.alexandria.entity.DocumentCategoryId;
 import com.alexandria.entity.User;
 import com.alexandria.entity.Visibility;
 import com.alexandria.exception.CategoryNotFoundException;
@@ -33,6 +36,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -252,6 +256,80 @@ class DocumentServiceTest {
         assertThat(response.last()).isTrue();
     }
 
+    // ---------- update ----------
+
+    @Test
+    void update_retainsOverlappingCategory_withoutRemovingAndReinsertingIt() {
+        UUID docId = UUID.randomUUID();
+        UUID keptCategoryId = UUID.randomUUID();
+        UUID addedCategoryId = UUID.randomUUID();
+
+        Category kept = category(keptCategoryId);
+        Category added = category(addedCategoryId);
+
+        Document document = publicDocument(docId, UUID.randomUUID());
+        DocumentCategory existingAssociation = new DocumentCategory();
+        existingAssociation.setId(new DocumentCategoryId(docId, keptCategoryId));
+        existingAssociation.setDocument(document);
+        existingAssociation.setCategory(kept);
+        document.setDocumentCategories(new ArrayList<>(List.of(existingAssociation)));
+
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(document));
+        when(categoryRepository.findById(keptCategoryId)).thenReturn(Optional.of(kept));
+        when(categoryRepository.findById(addedCategoryId)).thenReturn(Optional.of(added));
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(documentMapper.toDetail(any(Document.class))).thenReturn(sampleDetail(docId));
+
+        classUnderTest.update(docId, new UpdateDocumentRequest(
+                null, null, Set.of(keptCategoryId, addedCategoryId), null));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(documentRepository).save(captor.capture());
+        List<DocumentCategory> associations = captor.getValue().getDocumentCategories();
+
+        // The already-present association must be left in place (not cleared and
+        // re-created) — that is what avoids the duplicate composite-key flush error.
+        assertThat(associations).contains(existingAssociation);
+        assertThat(associations)
+                .extracting(dc -> dc.getCategory().getId())
+                .containsExactlyInAnyOrder(keptCategoryId, addedCategoryId);
+    }
+
+    @Test
+    void update_removesCategoriesNoLongerRequested() {
+        UUID docId = UUID.randomUUID();
+        UUID removedCategoryId = UUID.randomUUID();
+        UUID keptCategoryId = UUID.randomUUID();
+
+        Category removed = category(removedCategoryId);
+        Category kept = category(keptCategoryId);
+
+        Document document = publicDocument(docId, UUID.randomUUID());
+        DocumentCategory removedAssociation = new DocumentCategory();
+        removedAssociation.setId(new DocumentCategoryId(docId, removedCategoryId));
+        removedAssociation.setDocument(document);
+        removedAssociation.setCategory(removed);
+        DocumentCategory keptAssociation = new DocumentCategory();
+        keptAssociation.setId(new DocumentCategoryId(docId, keptCategoryId));
+        keptAssociation.setDocument(document);
+        keptAssociation.setCategory(kept);
+        document.setDocumentCategories(new ArrayList<>(List.of(removedAssociation, keptAssociation)));
+
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(document));
+        when(categoryRepository.findById(keptCategoryId)).thenReturn(Optional.of(kept));
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(documentMapper.toDetail(any(Document.class))).thenReturn(sampleDetail(docId));
+
+        classUnderTest.update(docId, new UpdateDocumentRequest(
+                null, null, Set.of(keptCategoryId), null));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(documentRepository).save(captor.capture());
+        assertThat(captor.getValue().getDocumentCategories())
+                .extracting(dc -> dc.getCategory().getId())
+                .containsExactly(keptCategoryId);
+    }
+
     // ---------- delete ----------
 
     @AfterEach
@@ -315,6 +393,13 @@ class DocumentServiceTest {
         author.setDisplayName("Author");
         doc.setAuthor(author);
         return doc;
+    }
+
+    private Category category(UUID id) {
+        Category category = new Category();
+        category.setId(id);
+        category.setName("Category " + id);
+        return category;
     }
 
     private DocumentDetail sampleDetail(UUID id) {
