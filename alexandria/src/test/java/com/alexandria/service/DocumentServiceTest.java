@@ -168,7 +168,7 @@ class DocumentServiceTest {
         Document doc = publicDocument(docId, UUID.randomUUID());
         DocumentDetail expected = sampleDetail(docId);
 
-        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(documentRepository.findWithCategoriesById(any(UUID.class))).thenReturn(Optional.of(doc));
         when(documentMapper.toDetail(any(Document.class))).thenReturn(expected);
 
         DocumentDetail result = classUnderTest.get(docId, userId);
@@ -181,7 +181,7 @@ class DocumentServiceTest {
         UUID docId = UUID.randomUUID();
         Document doc = privateDocument(docId, UUID.randomUUID());
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        when(documentRepository.findWithCategoriesById(docId)).thenReturn(Optional.of(doc));
 
         assertThatThrownBy(() -> classUnderTest.get(docId, null))
                 .isInstanceOf(DocumentNotFoundException.class)
@@ -195,7 +195,7 @@ class DocumentServiceTest {
         UUID otherUserId = UUID.randomUUID();
         Document doc = privateDocument(docId, authorId);
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        when(documentRepository.findWithCategoriesById(docId)).thenReturn(Optional.of(doc));
 
         assertThatThrownBy(() -> classUnderTest.get(docId, otherUserId))
                 .isInstanceOf(DocumentNotFoundException.class)
@@ -209,7 +209,7 @@ class DocumentServiceTest {
         Document doc = privateDocument(docId, authorId);
         DocumentDetail expected = sampleDetail(docId);
 
-        when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.of(doc));
+        when(documentRepository.findWithCategoriesById(any(UUID.class))).thenReturn(Optional.of(doc));
         when(documentMapper.toDetail(any(Document.class))).thenReturn(expected);
 
         DocumentDetail result = classUnderTest.get(docId, authorId);
@@ -220,7 +220,7 @@ class DocumentServiceTest {
     @Test
     void get_unknownDocument_throwsDocumentNotFoundException() {
         UUID docId = UUID.randomUUID();
-        when(documentRepository.findById(docId)).thenReturn(Optional.empty());
+        when(documentRepository.findWithCategoriesById(docId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> classUnderTest.get(docId, UUID.randomUUID()))
                 .isInstanceOf(DocumentNotFoundException.class)
@@ -274,7 +274,7 @@ class DocumentServiceTest {
         existingAssociation.setCategory(kept);
         document.setDocumentCategories(new ArrayList<>(List.of(existingAssociation)));
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(document));
+        when(documentRepository.findWithCategoriesById(docId)).thenReturn(Optional.of(document));
         when(categoryRepository.findById(keptCategoryId)).thenReturn(Optional.of(kept));
         when(categoryRepository.findById(addedCategoryId)).thenReturn(Optional.of(added));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -315,7 +315,7 @@ class DocumentServiceTest {
         keptAssociation.setCategory(kept);
         document.setDocumentCategories(new ArrayList<>(List.of(removedAssociation, keptAssociation)));
 
-        when(documentRepository.findById(docId)).thenReturn(Optional.of(document));
+        when(documentRepository.findWithCategoriesById(docId)).thenReturn(Optional.of(document));
         when(categoryRepository.findById(keptCategoryId)).thenReturn(Optional.of(kept));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
         when(documentMapper.toDetail(any(Document.class))).thenReturn(sampleDetail(docId));
