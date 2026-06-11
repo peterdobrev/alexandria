@@ -13,10 +13,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CommentService } from '../../../core/services/comment.service';
 import { DocumentService } from '../../../core/services/document.service';
 import { InteractionService } from '../../../core/services/interaction.service';
+import { ReadingListService } from '../../../core/services/reading-list.service';
 import { AvatarComponent } from '../../../shared/ui/avatar.component';
 import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
 import type { CommentResponse } from '../../../core/models/comment.model';
 import type { DocumentDetail } from '../../../core/models/document.model';
+import type { ReadingListSummaryResponse } from '../../../core/models/reading-list.model';
 
 @Component({
   selector: 'app-document-detail',
@@ -59,6 +61,56 @@ import type { DocumentDetail } from '../../../core/models/document.model';
           <div class="owner-actions">
             <a [routerLink]="['/documents', doc.id, 'edit']" class="btn btn-secondary">Edit</a>
             <button type="button" class="btn btn-danger" (click)="deleteDocument()">Delete</button>
+          </div>
+        }
+
+        @if (auth.isAuthenticated()) {
+          <div class="save-row">
+            <button
+              type="button"
+              class="btn btn-secondary save-btn"
+              (click)="toggleSavePanel()"
+              [attr.aria-expanded]="savePanelOpen()"
+            >
+              <svg viewBox="0 0 24 24" class="save-ic" aria-hidden="true">
+                <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
+              </svg>
+              Save to collection
+            </button>
+
+            @if (savePanelOpen()) {
+              <div class="save-panel">
+                @if (collectionsLoading()) {
+                  <p class="save-state">Loading collections…</p>
+                } @else if (collections().length === 0) {
+                  <p class="save-state">
+                    No collections yet. <a routerLink="/reading-lists">Create one</a>.
+                  </p>
+                } @else {
+                  <ul class="collection-list">
+                    @for (col of collections(); track col.id) {
+                      <li>
+                        <button
+                          type="button"
+                          class="collection-item"
+                          [class.saved]="savedIds().has(col.id)"
+                          [disabled]="savedIds().has(col.id)"
+                          (click)="saveToCollection(col.id)"
+                        >
+                          <svg viewBox="0 0 24 24" class="col-ic" aria-hidden="true">
+                            <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
+                          </svg>
+                          {{ col.name }}
+                          @if (savedIds().has(col.id)) {
+                            <span class="saved-badge">Saved</span>
+                          }
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
           </div>
         }
 
@@ -176,6 +228,38 @@ import type { DocumentDetail } from '../../../core/models/document.model';
     .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
     .description { color: var(--color-text-secondary); line-height: 1.65; margin: 0 0 1.25rem; }
     .owner-actions { display: flex; gap: 0.6rem; margin-bottom: 1.25rem; }
+    .save-row { position: relative; margin-bottom: 1.25rem; }
+    .save-btn { display: inline-flex; align-items: center; gap: 0.45rem; }
+    .save-ic {
+      width: 16px; height: 16px; fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+    }
+    .save-panel {
+      position: absolute; top: calc(100% + 0.4rem); left: 0; z-index: 20;
+      min-width: 220px; background: var(--color-surface);
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 0.4rem 0;
+    }
+    .save-state { margin: 0.5rem 0.9rem; font-size: 0.88rem; color: var(--color-text-muted); }
+    .save-state a { color: var(--color-accent); }
+    .collection-list { list-style: none; margin: 0; padding: 0; }
+    .collection-item {
+      display: flex; align-items: center; gap: 0.5rem; width: 100%;
+      padding: 0.55rem 0.9rem; background: none; border: none; cursor: pointer;
+      font-size: 0.92rem; color: var(--color-text); text-align: left;
+      transition: background var(--transition);
+    }
+    .collection-item:hover:not(:disabled) { background: var(--color-surface-hover); }
+    .collection-item.saved { color: var(--color-text-muted); cursor: default; }
+    .col-ic {
+      width: 15px; height: 15px; fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+    }
+    .saved-badge {
+      margin-left: auto; font-size: 0.75rem; color: var(--color-accent);
+      background: var(--color-accent-soft); padding: 0.1rem 0.45rem;
+      border-radius: var(--radius-sm);
+    }
     .file-link {
       display: inline-flex; align-items: center; gap: 0.6rem;
       padding: 0.75rem 1.1rem; margin-bottom: 1.25rem;
@@ -221,6 +305,7 @@ export class DocumentDetailComponent {
   private readonly documentService = inject(DocumentService);
   private readonly commentService = inject(CommentService);
   private readonly interactionService = inject(InteractionService);
+  private readonly readingListService = inject(ReadingListService);
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
 
@@ -234,6 +319,11 @@ export class DocumentDetailComponent {
   protected readonly commentsLast = signal(true);
   protected readonly commentPage = signal(0);
   protected readonly commentSubmitting = signal(false);
+
+  protected readonly savePanelOpen = signal(false);
+  protected readonly collections = signal<ReadingListSummaryResponse[]>([]);
+  protected readonly collectionsLoading = signal(false);
+  protected readonly savedIds = signal<Set<string>>(new Set());
 
   protected readonly commentControl = new FormControl('', [
     Validators.required,
@@ -310,6 +400,36 @@ export class DocumentDetailComponent {
     if (!confirm('Delete this document? This cannot be undone.')) return;
     this.documentService.delete(this.id()).subscribe(() => {
       this.router.navigate(['/feed']);
+    });
+  }
+
+  protected toggleSavePanel(): void {
+    const next = !this.savePanelOpen();
+    this.savePanelOpen.set(next);
+    if (next && this.collections().length === 0) {
+      this.loadCollections();
+    }
+  }
+
+  private loadCollections(): void {
+    this.collectionsLoading.set(true);
+    this.readingListService.getReadingLists(0, 100).subscribe({
+      next: page => {
+        this.collections.set(page.content);
+        this.collectionsLoading.set(false);
+      },
+      error: () => this.collectionsLoading.set(false),
+    });
+  }
+
+  protected saveToCollection(collectionId: string): void {
+    const doc = this.document();
+    if (!doc) return;
+    this.readingListService.addItem(collectionId, { documentId: doc.id }).subscribe({
+      next: () => {
+        this.savedIds.update(ids => new Set([...ids, collectionId]));
+      },
+      error: () => {},
     });
   }
 

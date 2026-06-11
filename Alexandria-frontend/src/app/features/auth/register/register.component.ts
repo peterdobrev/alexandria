@@ -46,7 +46,8 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   `,
   styles: `
-    .auth { display: flex; justify-content: center; padding: 2.5rem 0; }
+    :host { display: flex; flex: 1; }
+    .auth { display: flex; justify-content: center; align-items: center; width: 100%; }
     .auth-card { width: 100%; max-width: 400px; padding: 2rem; }
     h1 { margin: 0 0 0.35rem; font-size: 1.5rem; }
     .subtitle { margin: 0 0 1.5rem; font-size: 0.92rem; }

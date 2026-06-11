@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,7 +9,7 @@ import { AvatarComponent } from '../ui/avatar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink, AvatarComponent],
   template: `
-    <header class="top-bar">
+    <header class="top-bar" [class.top-bar--auth]="isAuthPage()">
       <a routerLink="/feed" class="brand">
         <span class="brand-mark">A</span>
         <span class="brand-name">Alexandria</span>
@@ -46,18 +46,24 @@ import { AvatarComponent } from '../ui/avatar.component';
     </header>
   `,
   styles: `
-    .top-bar {
+    :host {
+      display: block;
       position: sticky;
       top: 0;
       z-index: 50;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .top-bar {
       display: flex;
       align-items: center;
       gap: 1.25rem;
       height: var(--header-height);
-      padding: 0 1.25rem;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--color-border);
+      padding: 0 1.5rem 0 calc(var(--sidebar-width) + 1rem);
+    }
+    .top-bar--auth {
+      padding-left: 1.5rem;
     }
     .brand {
       display: flex;
@@ -86,9 +92,9 @@ import { AvatarComponent } from '../ui/avatar.component';
     }
     .search {
       position: relative;
-      flex: 1;
+      flex: 1 1 120px;
+      min-width: 0;
       max-width: 460px;
-      margin: 0 auto;
     }
     .search-icon {
       position: absolute;
@@ -120,18 +126,27 @@ import { AvatarComponent } from '../ui/avatar.component';
       align-items: center;
       gap: 0.6rem;
       flex-shrink: 0;
+      margin-left: auto;
     }
     .compose-plus { font-size: 1.05rem; line-height: 1; }
     .me { display: inline-flex; border-radius: var(--radius-full); }
+    @media (max-width: 860px) {
+      .top-bar { padding-left: 1rem; }
+    }
     @media (max-width: 720px) {
       .brand-name { display: none; }
       .compose-label { display: none; }
+    }
+    @media (max-width: 480px) {
+      .search { display: none; }
     }
   `,
 })
 export class TopBarComponent {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  readonly isAuthPage = input(false);
 
   protected readonly query = new FormControl('', { nonNullable: true });
 
