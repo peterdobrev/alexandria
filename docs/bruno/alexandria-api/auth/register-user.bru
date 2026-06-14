@@ -11,9 +11,19 @@ post {
 }
 
 body:json {
-{
-  "email": "john.doe@example.com",
-  "password": "securePass123",
-  "displayName": "John Doe"
+  {
+    "email": "john.doe@example.com",
+    "password": "securePass123",
+    "displayName": "John Doe"
+  }
 }
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("authToken", res.body.token);
+    bru.setEnvVar("userId", res.body.userId);
+    expect(res.body.tokenType).to.equal("Bearer");
+    expect(res.body.expiresIn).to.be.above(0);
+    expect(res.headers["location"]).to.match(/\/api\/users\/[0-9a-f-]{36}$/);
+  }
 }

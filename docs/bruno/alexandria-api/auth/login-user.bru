@@ -11,8 +11,14 @@ post {
 }
 
 body:json {
-{
-  "email": "john.doe@example.com",
-  "password": "securePass123"
+  {"email": "john.doe@example.com", "password": "securePass123"}
 }
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("authToken", res.body.token);
+    bru.setEnvVar("userId", res.body.userId);
+    expect(res.body.tokenType).to.equal("Bearer");
+    expect(res.body.expiresIn).to.be.above(0);
+  }
 }

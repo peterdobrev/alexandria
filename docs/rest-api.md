@@ -15,6 +15,10 @@ Authorization: Bearer <token>
 
 Tokens are obtained from `POST /api/auth/register` or `POST /api/auth/login`.
 
+> **Pagination:** All paginated endpoints cap `size` at 100. Requests with `size > 100` are silently reduced to 100.
+
+> **Privacy masking:** Private documents not owned by the authenticated user produce `404 Not Found` responses (not `403`), masking their existence.
+
 ---
 
 ## Auth
@@ -39,8 +43,15 @@ Base URL: `/api/auth`
 **Response** `201 Created`
 
 ```json
-{ "token": "string" }
+{
+  "userId": "UUID",
+  "token": "string",
+  "tokenType": "Bearer",
+  "expiresIn": "long (seconds)"
+}
 ```
+
+`Location` header set to `/api/users/{userId}`
 
 ---
 
@@ -61,7 +72,12 @@ Base URL: `/api/auth`
 **Response** `200 OK`
 
 ```json
-{ "token": "string" }
+{
+  "userId": "UUID",
+  "token": "string",
+  "tokenType": "Bearer",
+  "expiresIn": "long (seconds)"
+}
 ```
 
 ---
@@ -109,8 +125,8 @@ Base URL: `/api/users`
 
 | Field | Type | Constraints |
 |---|---|---|
-| `displayName` | string | optional, max 255 chars |
-| `password` | string | optional, 8–255 chars |
+| `displayName` | string | optional; if provided must be non-blank, max 255 chars (omit or null to leave unchanged) |
+| `password` | string | optional; if provided must be non-blank, 8–255 chars (omit or null to leave unchanged) |
 
 **Response** `200 OK`
 
@@ -227,11 +243,11 @@ Upload a file document.
 | `title` | string | required, max 255 chars |
 | `description` | string | optional, max 5000 chars |
 | `type` | string | required, max 50 chars |
-| `categoryIds` | UUID[] | optional |
+| `categoryIds` | UUID[] | optional, max 20 items |
 | `visibility` | Visibility | optional |
 
 **Response** `201 Created` — `DocumentDetail` (same shape as `GET /api/documents/{id}`)
-`Location` header set to `/api/documents/{id}`
+`Location` header set to absolute URL, e.g. `http://<host>/api/documents/{id}`
 
 ---
 
@@ -250,13 +266,13 @@ Create a text/body document.
 |---|---|---|
 | `title` | string | required, max 255 chars |
 | `description` | string | optional, max 5000 chars |
-| `type` | string | required |
-| `body` | string | required |
-| `categoryIds` | UUID[] | optional |
+| `type` | string | required, max 50 chars |
+| `body` | string | required, max 500 000 chars |
+| `categoryIds` | UUID[] | optional, max 20 items |
 | `visibility` | Visibility | optional |
 
 **Response** `201 Created` — `DocumentDetail`
-`Location` header set to `/api/documents/{id}`
+`Location` header set to absolute URL, e.g. `http://<host>/api/documents/{id}`
 
 ---
 
@@ -422,7 +438,7 @@ All reading list endpoints require authentication. Access to a specific list is 
 
 | Field | Type | Constraints |
 |---|---|---|
-| `name` | string | required, not blank |
+| `name` | string | required, not blank, max 255 chars |
 
 **Response** `201 Created`
 
@@ -466,7 +482,7 @@ All reading list endpoints require authentication. Access to a specific list is 
 
 | Field | Type | Constraints |
 |---|---|---|
-| `name` | string | required, not blank |
+| `name` | string | required, not blank, max 255 chars |
 
 **Response** `200 OK` — `ReadingListResponse`
 
@@ -504,6 +520,8 @@ All reading list endpoints require authentication. Access to a specific list is 
   "addedAt": "Instant"
 }
 ```
+
+`Location` header set to the new item URL: `.../items/{documentId}`
 
 ---
 
@@ -581,6 +599,8 @@ Base URL: `/api/documents/{documentId}/comments`
 }
 ```
 
+`Location` header set to the new comment URL: `.../comments/{commentId}`
+
 ---
 
 ### DELETE /api/documents/{documentId}/comments/{commentId}
@@ -631,3 +651,50 @@ Record a user interaction with a document.
 | `kind` | string | `VIEW` only — any other value returns `400 Bad Request` |
 
 **Response** `204 No Content`
+
+---
+
+## Security Response Headers
+
+All API responses include the following security headers:
+
+| Header | Value |
+|---|---|
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
+| `Referrer-Policy` | `no-referrer` |
+| `Content-Security-Policy` | `default-src 'none'` |
+
+---
+
+## Error Responses
+
+All errors return a structured JSON body:
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "human-readable description",
+  "timestamp": "2024-01-01T12:00:00Z",
+  "path": "/api/..."
+}
+```
+
+| HTTP Status | Condition | Message |
+|---|---|---|
+| `400` | Validation failure (`@NotBlank`, `@Size`, etc.) | Field-level constraint message |
+| `400` | Malformed JSON body | `Malformed request body` |
+| `400` | Type mismatch on parameter | `Invalid value '<v>' for parameter '<name>'` |
+| `400` | Missing required parameter | `Required parameter '<name>' is missing` |
+| `400` | Invalid sort property | `Invalid sort property: <field>` |
+| `400` | Invalid multipart request | `Invalid multipart request` |
+| `401` | Missing or invalid token | `Authentication required` |
+| `401` | Expired JWT | `JWT token has expired` |
+| `401` | Malformed JWT | `JWT token is invalid or malformed` |
+| `401` | Token for deleted user | `Authentication required` |
+| `403` | Authenticated but insufficient permissions | `Access denied` |
+| `404` | Resource not found | `Resource not found` |
+| `405` | HTTP method not allowed | Method-specific message; `Allow` header lists permitted methods |
+| `415` | Unsupported content type | `Accept` header lists supported types |
+
+> **JWT compatibility:** Tokens include `iss`, `aud`, and `jti` claims validated on every request. Tokens issued by a previous server version will be rejected with `401`.
