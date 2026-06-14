@@ -1,0 +1,25 @@
+meta {
+  name: Log Document Interaction
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/documents/{{id}}/interactions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:path {
+  id: 550e8400-e29b-41d4-a716-446655440000
+}
+
+body:json {
+{
+  "kind": "VIEW"
+}
+}

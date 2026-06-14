@@ -1,0 +1,21 @@
+meta {
+  name: Get Document Recommendations
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/recommendations
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:query {
+  ~page: 0
+  ~size: 10
+  ~sort: createdAt,desc
+}

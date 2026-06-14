@@ -1,0 +1,25 @@
+meta {
+  name: Add Item to Reading List
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/reading-lists/{{id}}/items
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:path {
+  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+}
+
+body:json {
+{
+  "documentId": "d4e5f6a7-b8c9-0123-def0-123456789abc"
+}
+}

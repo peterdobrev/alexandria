@@ -1,0 +1,15 @@
+meta {
+  name: Get User by ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/users/{{id}}
+  body: none
+  auth: none
+}
+
+params:path {
+  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+}

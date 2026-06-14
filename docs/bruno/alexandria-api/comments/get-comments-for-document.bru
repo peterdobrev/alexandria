@@ -1,0 +1,21 @@
+meta {
+  name: Get Comments for Document
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/documents/{{documentId}}/comments
+  body: none
+  auth: none
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+}
+
+params:path {
+  documentId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Get Reading Lists
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/reading-lists
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:query {
+  ~page: 0
+  ~size: 20
+  ~sort: createdAt,desc
+}

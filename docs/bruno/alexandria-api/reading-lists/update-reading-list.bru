@@ -1,0 +1,25 @@
+meta {
+  name: Update Reading List
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/reading-lists/{{id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:path {
+  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+}
+
+body:json {
+{
+  "name": "Advanced Java Reading"
+}
+}

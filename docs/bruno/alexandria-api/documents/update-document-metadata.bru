@@ -1,0 +1,30 @@
+meta {
+  name: Update Document Metadata
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/documents/{{id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:path {
+  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+}
+
+body:json {
+{
+  "title": "Introduction to Java — Second Edition",
+  "description": "An updated comprehensive guide to Java programming.",
+  "categoryIds": [
+    "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  ],
+  "visibility": "PRIVATE"
+}
+}

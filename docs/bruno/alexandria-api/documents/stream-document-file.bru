@@ -1,0 +1,19 @@
+meta {
+  name: Stream Document File
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/documents/{{id}}/file
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:path {
+  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+}

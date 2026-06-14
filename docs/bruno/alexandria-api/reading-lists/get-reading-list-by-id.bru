@@ -1,0 +1,19 @@
+meta {
+  name: Get Reading List by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/reading-lists/{{id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+params:path {
+  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+}
