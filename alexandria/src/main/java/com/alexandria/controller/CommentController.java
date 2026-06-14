@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -18,9 +17,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,12 +41,17 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getComments(documentId, currentUserEmail, pageable));
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public CommentResponse addComment(
+    public ResponseEntity<CommentResponse> addComment(
             @PathVariable UUID documentId,
             @Valid @RequestBody CreateCommentRequest request) {
-        return commentService.addComment(documentId, request, securityUtils.getCurrentUser());
+        CommentResponse response = commentService.addComment(documentId, request, securityUtils.getCurrentUser());
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{commentId}")
+                .buildAndExpand(response.id())
+                .toUri();
+        return ResponseEntity.created(location).body(response);
     }
 
     @PreAuthorize("@ownership.isCommentOwnerOrAdmin(#commentId, principal)")

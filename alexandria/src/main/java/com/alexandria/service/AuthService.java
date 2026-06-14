@@ -17,7 +17,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Slf4j
@@ -45,6 +50,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserMapper userMapper;
+    private final long jwtExpiration;
 
     public AuthResponse register(RegisterRequest request) {
         Role role = roleRepository.findByName(RoleNames.USER)
@@ -58,12 +64,12 @@ public class AuthService {
         try {
             userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
-            log.warn("Registration attempt with already-used email: {}", request.email());
+            log.warn("Registration attempt with already-used email: {}", emailHash(request.email()));
             throw new EmailAlreadyInUseException(request.email());
         }
 
-        log.info("User registered successfully: {}", request.email());
-        return new AuthResponse(jwtService.generateToken(user));
+        log.info("User registered successfully: {}", emailHash(request.email()));
+        return AuthResponse.of(user.getId(), jwtService.generateToken(user), jwtExpiration);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -74,12 +80,22 @@ public class AuthService {
         boolean passwordOk = passwordEncoder.matches(request.password(), hashToCheck);
 
         if (userOpt.isEmpty() || !passwordOk) {
-            log.warn("Failed login attempt for email: {}", request.email());
+            log.warn("Failed login attempt for email: {}", emailHash(request.email()));
             throw new BadCredentialsException(INVALID_CREDENTIALS);
         }
 
         User user = userOpt.get();
-        log.info("User logged in successfully: {}", request.email());
-        return new AuthResponse(jwtService.generateToken(user));
+        log.info("User logged in successfully: {}", emailHash(request.email()));
+        return AuthResponse.of(user.getId(), jwtService.generateToken(user), jwtExpiration);
+    }
+
+    private static String emailHash(String email) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(email.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest).substring(0, 12);
+        } catch (NoSuchAlgorithmException e) {
+            return "[unknown]";
+        }
     }
 }

@@ -20,6 +20,7 @@ public record CreateDocumentRequest(
         @Size(max = 50)
         String type,
 
+        @Size(max = 20)
         Set<UUID> categoryIds,
 
         Visibility visibility

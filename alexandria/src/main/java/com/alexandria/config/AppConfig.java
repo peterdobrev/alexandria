@@ -26,6 +26,12 @@ public class AppConfig {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
+    @Value("${jwt.issuer}")
+    private String jwtIssuer;
+
+    @Value("${jwt.audience}")
+    private String jwtAudience;
+
     @Bean
     public UserMapper userMapper() {
         return new UserMapper();
@@ -33,7 +39,7 @@ public class AppConfig {
 
     @Bean
     public JwtService jwtService() {
-        return new JwtService(jwtSecret, jwtExpiration);
+        return new JwtService(jwtSecret, jwtExpiration, jwtIssuer, jwtAudience);
     }
 
     @Bean
@@ -43,6 +49,6 @@ public class AppConfig {
 
     @Bean
     public AuthService authService() {
-        return new AuthService(userRepository, roleRepository, passwordEncoder, jwtService(), userMapper());
+        return new AuthService(userRepository, roleRepository, passwordEncoder, jwtService(), userMapper(), jwtExpiration);
     }
 }

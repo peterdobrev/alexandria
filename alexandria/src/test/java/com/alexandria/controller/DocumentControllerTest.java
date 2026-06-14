@@ -118,7 +118,7 @@ class DocumentControllerTest {
                         .content("{\"title\":\"Title\",\"description\":\"Desc\",\"type\":\"ARTICLE\","
                                 + "\"body\":\"Body content\",\"categoryIds\":[],\"visibility\":\"PUBLIC\"}"))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/documents/" + id))
+                .andExpect(header().string("Location", "http://localhost/api/documents/" + id))
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.title").value("Title"));
     }

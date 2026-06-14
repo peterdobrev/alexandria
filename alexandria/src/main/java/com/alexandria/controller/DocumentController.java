@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Optional;
@@ -70,26 +71,30 @@ public class DocumentController {
         return documentService.get(id, currentUserId);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<DocumentDetail> create(
             @RequestPart("file") MultipartFile file,
             @RequestPart("metadata") @Valid CreateDocumentRequest metadata) {
         UUID currentUserId = securityUtils.getCurrentUser().getId();
         DocumentDetail detail = documentService.create(metadata, file, currentUserId);
-        return ResponseEntity
-                .created(URI.create("/api/documents/" + detail.id()))
-                .body(detail);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(detail.id())
+                .toUri();
+        return ResponseEntity.created(location).body(detail);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/article")
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<DocumentDetail> createArticle(@Valid @RequestBody CreateArticleRequest request) {
         UUID currentUserId = securityUtils.getCurrentUser().getId();
         DocumentDetail detail = documentService.createArticle(request, currentUserId);
-        return ResponseEntity
-                .created(URI.create("/api/documents/" + detail.id()))
-                .body(detail);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/api/documents/{id}")
+                .buildAndExpand(detail.id())
+                .toUri();
+        return ResponseEntity.created(location).body(detail);
     }
 
     @PreAuthorize("@ownership.isDocumentOwner(#id, principal)")

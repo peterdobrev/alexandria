@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,15 +19,17 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String BEARER_PREFIX = "bearer ";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final JsonAuthenticationEntryPoint entryPoint;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -45,7 +48,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             } catch (InvalidTokenException | IllegalArgumentException | UsernameNotFoundException e) {
                 log.warn("JWT authentication failed on {}: {}", request.getRequestURI(), e.getMessage());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                SecurityContextHolder.clearContext();
+                entryPoint.commence(request, response,
+                        new BadCredentialsException(e.getMessage(), e));
                 return;
             }
         }
@@ -55,10 +60,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String extractToken(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+        if (authHeader == null || !authHeader.toLowerCase(Locale.ROOT).startsWith(BEARER_PREFIX)) {
             return null;
         }
-        String token = authHeader.substring(BEARER_PREFIX.length());
+        String token = authHeader.substring(BEARER_PREFIX.length()).strip();
         return token.isBlank() ? null : token;
     }
 

@@ -9,7 +9,6 @@ import com.alexandria.entity.User;
 import com.alexandria.entity.Visibility;
 import com.alexandria.exception.CommentNotFoundException;
 import com.alexandria.exception.DocumentNotFoundException;
-import com.alexandria.exception.ForbiddenException;
 import com.alexandria.mapper.CommentMapper;
 import com.alexandria.repository.CommentRepository;
 import com.alexandria.repository.DocumentRepository;
@@ -87,14 +86,14 @@ class CommentServiceTest {
     }
 
     @Test
-    void getComments_privateDocument_nonOwnerThrowsForbidden() {
+    void getComments_privateDocument_nonOwnerThrowsDocumentNotFoundException() {
         UUID docId = UUID.randomUUID();
         Document doc = privateDoc(docId, "owner@example.com");
 
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
 
         assertThatThrownBy(() -> classUnderTest.getComments(docId, "other@example.com", Pageable.unpaged()))
-                .isInstanceOf(ForbiddenException.class);
+                .isInstanceOf(DocumentNotFoundException.class);
 
         verify(commentRepository, never()).findByDocumentId(any(), any());
     }
@@ -148,7 +147,7 @@ class CommentServiceTest {
     }
 
     @Test
-    void addComment_privateDocumentNotOwner_throwsForbidden() {
+    void addComment_privateDocumentNotOwner_throwsDocumentNotFoundException() {
         UUID docId = UUID.randomUUID();
         Document doc = privateDoc(docId, "owner@example.com");
         User commenter = userWithEmail("other@example.com");
@@ -157,7 +156,7 @@ class CommentServiceTest {
 
         assertThatThrownBy(() -> classUnderTest.addComment(
                 docId, new CreateCommentRequest("body"), commenter))
-                .isInstanceOf(ForbiddenException.class);
+                .isInstanceOf(DocumentNotFoundException.class);
 
         verify(commentRepository, never()).save(any());
     }

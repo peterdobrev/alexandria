@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -184,7 +185,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex,
                                                                HttpServletRequest request) {
         log.warn("Illegal argument on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        return build(HttpStatus.BAD_REQUEST, "Invalid request", request);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -192,6 +193,20 @@ public class GlobalExceptionHandler {
                                                                HttpServletRequest request) {
         log.warn("Bad credentials on {}: {}", request.getRequestURI(), ex.getMessage());
         return build(HttpStatus.UNAUTHORIZED, "Invalid credentials", request);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex,
+                                                            HttpServletRequest request) {
+        log.warn("Invalid JWT token on {}: {}", request.getRequestURI(), ex.getMessage());
+        return build(HttpStatus.UNAUTHORIZED, "Invalid or expired token", request);
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex,
+                                                                HttpServletRequest request) {
+        log.warn("User account not found on {}: {}", request.getRequestURI(), ex.getMessage());
+        return build(HttpStatus.UNAUTHORIZED, "Authentication required", request);
     }
 
     @ExceptionHandler(Exception.class)
