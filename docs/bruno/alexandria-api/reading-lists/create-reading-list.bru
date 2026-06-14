@@ -1,0 +1,21 @@
+meta {
+  name: Create Reading List
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/reading-lists
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+{
+  "name": "Java Books To Read"
+}
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Create Article Document
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/documents/article
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+{
+  "title": "Getting Started with Spring Boot",
+  "description": "A beginner-friendly overview of the Spring Boot framework.",
+  "type": "ARTICLE",
+  "body": "Spring Boot makes it easy to create stand-alone, production-grade Spring based Applications...",
+  "categoryIds": [
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  ],
+  "visibility": "PUBLIC"
+}
+}
