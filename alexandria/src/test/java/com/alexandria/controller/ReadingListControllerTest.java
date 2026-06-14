@@ -157,7 +157,10 @@ class ReadingListControllerTest {
         ReadingListItemResponse itemResponse = new ReadingListItemResponse(
                 UUID.randomUUID(), documentSummary, Instant.now());
 
-        when(readingListService.addItem(eq(listId), any(AddReadingListItemRequest.class)))
+        User currentUser = new User();
+        currentUser.setId(UUID.randomUUID());
+        when(securityUtils.getCurrentUser()).thenReturn(currentUser);
+        when(readingListService.addItem(eq(listId), any(AddReadingListItemRequest.class), any(UUID.class)))
                 .thenReturn(itemResponse);
 
         mockMvc.perform(post("/api/reading-lists/" + listId + "/items")

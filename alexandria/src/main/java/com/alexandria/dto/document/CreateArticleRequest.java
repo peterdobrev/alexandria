@@ -17,11 +17,14 @@ public record CreateArticleRequest(
         String description,
 
         @NotBlank
+        @Size(max = 50)
         String type,
 
         @NotBlank
+        @Size(max = 500_000)
         String body,
 
+        @Size(max = 20)
         Set<UUID> categoryIds,
 
         Visibility visibility

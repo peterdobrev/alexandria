@@ -12,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -73,11 +71,16 @@ public class ReadingListController {
     }
 
     @PreAuthorize("@ownership.isReadingListOwner(#id, principal)")
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{id}/items")
-    public ReadingListItemResponse addItem(@PathVariable UUID id,
-                                           @Valid @RequestBody AddReadingListItemRequest request) {
-        return readingListService.addItem(id, request);
+    public ResponseEntity<ReadingListItemResponse> addItem(@PathVariable UUID id,
+                                                           @Valid @RequestBody AddReadingListItemRequest request) {
+        UUID currentUserId = securityUtils.getCurrentUser().getId();
+        ReadingListItemResponse response = readingListService.addItem(id, request, currentUserId);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{documentId}")
+                .buildAndExpand(response.document().id())
+                .toUri();
+        return ResponseEntity.created(location).body(response);
     }
 
     @PreAuthorize("@ownership.isReadingListOwner(#id, principal)")

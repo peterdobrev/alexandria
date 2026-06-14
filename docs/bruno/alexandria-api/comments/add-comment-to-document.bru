@@ -23,3 +23,12 @@ body:json {
   "body": "Great document! Really helped me understand the topic."
 }
 }
+
+script:post-response {
+  expect(res.status).to.equal(201);
+  const location = res.headers["location"];
+  if (location) {
+    const parts = location.split("/");
+    bru.setEnvVar("commentId", parts[parts.length - 1]);
+  }
+}

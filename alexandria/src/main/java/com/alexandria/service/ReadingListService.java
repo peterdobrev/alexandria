@@ -10,6 +10,7 @@ import com.alexandria.entity.Document;
 import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.ReadingListItem;
 import com.alexandria.entity.User;
+import com.alexandria.entity.Visibility;
 import com.alexandria.exception.DocumentNotFoundException;
 import com.alexandria.exception.ReadingListItemAlreadyExistsException;
 import com.alexandria.exception.ReadingListItemNotFoundException;
@@ -72,11 +73,15 @@ public class ReadingListService {
         readingListRepository.delete(list);
     }
 
-    public ReadingListItemResponse addItem(UUID listId, AddReadingListItemRequest request) {
+    public ReadingListItemResponse addItem(UUID listId, AddReadingListItemRequest request, UUID currentUserId) {
         ReadingList list = readingListRepository.findById(listId)
                 .orElseThrow(() -> new ReadingListNotFoundException(listId));
         Document document = documentRepository.findById(request.documentId())
                 .orElseThrow(() -> new DocumentNotFoundException(request.documentId()));
+        if (document.getVisibility() == Visibility.PRIVATE
+                && !document.getAuthor().getId().equals(currentUserId)) {
+            throw new DocumentNotFoundException(request.documentId());
+        }
         if (readingListItemRepository.findByReadingListIdAndDocumentId(listId, request.documentId()).isPresent()) {
             throw new ReadingListItemAlreadyExistsException(listId, request.documentId());
         }

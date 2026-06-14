@@ -6,7 +6,6 @@ import com.alexandria.entity.Comment;
 import com.alexandria.entity.Document;
 import com.alexandria.entity.User;
 import com.alexandria.entity.Visibility;
-import com.alexandria.exception.AccessForbiddenException;
 import com.alexandria.exception.CommentNotFoundException;
 import com.alexandria.exception.DocumentNotFoundException;
 import com.alexandria.mapper.CommentMapper;
@@ -66,6 +65,7 @@ public class CommentService {
         if (currentUserEmail != null && currentUserEmail.equals(document.getAuthor().getEmail())) {
             return;
         }
-        throw new AccessForbiddenException("Access denied");
+        // Intentional 404 masking: prevents callers from confirming that a PRIVATE document exists.
+        throw new DocumentNotFoundException(document.getId());
     }
 }

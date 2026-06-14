@@ -23,3 +23,8 @@ body:json {
   "documentId": "d4e5f6a7-b8c9-0123-def0-123456789abc"
 }
 }
+
+script:post-response {
+  expect(res.status).to.equal(201);
+  expect(res.headers["location"]).to.include("/items/");
+}

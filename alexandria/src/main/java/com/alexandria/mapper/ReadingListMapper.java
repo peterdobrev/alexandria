@@ -3,12 +3,15 @@ package com.alexandria.mapper;
 import com.alexandria.dto.ReadingListItemResponse;
 import com.alexandria.dto.ReadingListResponse;
 import com.alexandria.dto.ReadingListSummaryResponse;
+import com.alexandria.entity.Document;
 import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.ReadingListItem;
+import com.alexandria.entity.Visibility;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -21,7 +24,9 @@ public class ReadingListMapper {
     }
 
     public ReadingListResponse toResponse(ReadingList list) {
+        UUID ownerId = list.getUser().getId();
         List<ReadingListItemResponse> items = list.getItems().stream()
+                .filter(item -> isVisibleTo(item.getDocument(), ownerId))
                 .map(this::toItemResponse)
                 .toList();
         return new ReadingListResponse(list.getId(), list.getName(), list.getCreatedAt(), items);
@@ -33,5 +38,12 @@ public class ReadingListMapper {
                 documentMapper.toSummary(item.getDocument()),
                 item.getAddedAt()
         );
+    }
+
+    private static boolean isVisibleTo(Document document, UUID viewerId) {
+        if (document.getVisibility() == Visibility.PUBLIC) {
+            return true;
+        }
+        return document.getAuthor().getId().equals(viewerId);
     }
 }

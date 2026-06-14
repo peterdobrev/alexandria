@@ -8,7 +8,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
@@ -44,8 +43,9 @@ class JwtAuthenticationFilterTest {
     private FilterChain filterChain;
     @Mock
     private Claims claims;
+    @Mock
+    private JsonAuthenticationEntryPoint entryPoint;
 
-    @InjectMocks
     private JwtAuthenticationFilter classUnderTest;
 
     private MockHttpServletRequest request;
@@ -53,6 +53,7 @@ class JwtAuthenticationFilterTest {
 
     @BeforeEach
     void setUp() {
+        classUnderTest = new JwtAuthenticationFilter(jwtService, userDetailsService, entryPoint);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         SecurityContextHolder.clearContext();
@@ -116,7 +117,10 @@ class JwtAuthenticationFilterTest {
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
-        assertThat(response.getStatus()).isEqualTo(401);
+        verify(entryPoint).commence(
+                org.mockito.ArgumentMatchers.eq(request),
+                org.mockito.ArgumentMatchers.eq(response),
+                org.mockito.ArgumentMatchers.any());
         verify(filterChain, never()).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
@@ -131,8 +135,41 @@ class JwtAuthenticationFilterTest {
 
         classUnderTest.doFilterInternal(request, response, filterChain);
 
-        assertThat(response.getStatus()).isEqualTo(401);
+        verify(entryPoint).commence(
+                org.mockito.ArgumentMatchers.eq(request),
+                org.mockito.ArgumentMatchers.eq(response),
+                org.mockito.ArgumentMatchers.any());
         verify(filterChain, never()).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void doFilterInternal_lowercaseBearerPrefix_authenticatesSuccessfully() throws ServletException, IOException {
+        request.addHeader(HttpHeaders.AUTHORIZATION, "bearer " + VALID_TOKEN);
+        UserDetails userDetails = new User(TEST_EMAIL, "hashed", List.of());
+
+        when(jwtService.extractClaims(VALID_TOKEN)).thenReturn(claims);
+        when(claims.getSubject()).thenReturn(TEST_EMAIL);
+        when(userDetailsService.loadUserByUsername(TEST_EMAIL)).thenReturn(userDetails);
+
+        classUnderTest.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_uppercaseBearerPrefix_authenticatesSuccessfully() throws ServletException, IOException {
+        request.addHeader(HttpHeaders.AUTHORIZATION, "BEARER " + VALID_TOKEN);
+        UserDetails userDetails = new User(TEST_EMAIL, "hashed", List.of());
+
+        when(jwtService.extractClaims(VALID_TOKEN)).thenReturn(claims);
+        when(claims.getSubject()).thenReturn(TEST_EMAIL);
+        when(userDetailsService.loadUserByUsername(TEST_EMAIL)).thenReturn(userDetails);
+
+        classUnderTest.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        verify(filterChain).doFilter(request, response);
     }
 }

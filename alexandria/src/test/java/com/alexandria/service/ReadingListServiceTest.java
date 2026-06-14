@@ -190,7 +190,7 @@ class ReadingListServiceTest {
         when(readingListItemRepository.save(any(ReadingListItem.class))).thenReturn(savedItem);
         when(readingListMapper.toItemResponse(any(ReadingListItem.class))).thenReturn(itemResponse);
 
-        ReadingListItemResponse result = classUnderTest.addItem(listId, new AddReadingListItemRequest(docId));
+        ReadingListItemResponse result = classUnderTest.addItem(listId, new AddReadingListItemRequest(docId), UUID.randomUUID());
 
         assertThat(result).isEqualTo(itemResponse);
 
@@ -209,7 +209,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId)))
+        assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId), UUID.randomUUID()))
                 .isInstanceOf(ReadingListNotFoundException.class);
 
         verify(readingListItemRepository, never()).save(any());
@@ -224,7 +224,7 @@ class ReadingListServiceTest {
         when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
         when(documentRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId)))
+        assertThatThrownBy(() -> classUnderTest.addItem(listId, new AddReadingListItemRequest(docId), UUID.randomUUID()))
                 .isInstanceOf(DocumentNotFoundException.class);
 
         verify(readingListItemRepository, never()).save(any());
@@ -245,7 +245,7 @@ class ReadingListServiceTest {
         when(readingListItemRepository.save(any(ReadingListItem.class))).thenReturn(new ReadingListItem());
         when(readingListMapper.toItemResponse(any(ReadingListItem.class))).thenReturn(itemResponse(docId));
 
-        classUnderTest.addItem(listId, new AddReadingListItemRequest(docId));
+        classUnderTest.addItem(listId, new AddReadingListItemRequest(docId), UUID.randomUUID());
 
         verify(interactionService).logBookmark(owner, document);
     }
