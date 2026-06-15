@@ -28,8 +28,6 @@ public class DocumentMapper {
                 toCategorySummaries(d.getDocumentCategories()),
                 d.getUploadedFilePath() != null,
                 d.getBody() != null,
-                d.getSizeBytes(),
-                d.getContentType(),
                 d.getCreatedAt(),
                 d.getUpdatedAt()
         );

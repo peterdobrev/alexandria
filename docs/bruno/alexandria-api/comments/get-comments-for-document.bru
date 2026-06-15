@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/documents/{{documentId}}/comments
+  url: {{baseUrl}}/api/documents/:documentId/comments
   body: none
   auth: none
 }
@@ -17,5 +17,5 @@ params:query {
 }
 
 params:path {
-  documentId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  documentId: 8375b658-7276-41a1-a9ae-9602af4cf500
 }

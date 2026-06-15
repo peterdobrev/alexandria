@@ -10,12 +10,12 @@ get {
   auth: bearer
 }
 
-auth:bearer {
-  token: {{authToken}}
-}
-
 params:query {
   ~page: 0
   ~size: 20
   ~sort: createdAt,desc
+}
+
+auth:bearer {
+  token: {{authToken}}
 }

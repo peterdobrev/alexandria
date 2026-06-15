@@ -5,15 +5,15 @@ meta {
 }
 
 delete {
-  url: {{baseUrl}}/api/documents/{{id}}
+  url: {{baseUrl}}/api/documents/:id
   body: none
   auth: bearer
 }
 
-auth:bearer {
-  token: {{authToken}}
+params:path {
+  id: 97c42c63-28d0-4d19-a15a-67f05a27c36f
 }
 
-params:path {
-  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+auth:bearer {
+  token: {{authToken}}
 }

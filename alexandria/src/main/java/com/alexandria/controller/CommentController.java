@@ -2,11 +2,11 @@ package com.alexandria.controller;
 
 import com.alexandria.dto.comment.CommentResponse;
 import com.alexandria.dto.comment.CreateCommentRequest;
+import com.alexandria.dto.common.PageResponse;
 import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,12 +33,12 @@ public class CommentController {
     private final SecurityUtils securityUtils;
 
     @GetMapping
-    public ResponseEntity<Page<CommentResponse>> getComments(
+    public ResponseEntity<PageResponse<CommentResponse>> getComments(
             @PathVariable UUID documentId,
             Authentication authentication,
             Pageable pageable) {
         String currentUserEmail = resolveCurrentUserEmail(authentication).orElse(null);
-        return ResponseEntity.ok(commentService.getComments(documentId, currentUserEmail, pageable));
+        return ResponseEntity.ok(PageResponse.of(commentService.getComments(documentId, currentUserEmail, pageable)));
     }
 
     @PreAuthorize("isAuthenticated()")

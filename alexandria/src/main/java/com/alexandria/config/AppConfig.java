@@ -6,6 +6,9 @@ import com.alexandria.repository.UserRepository;
 import com.alexandria.security.JwtService;
 import com.alexandria.security.UserDetailsServiceImpl;
 import com.alexandria.service.AuthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +34,13 @@ public class AppConfig {
 
     @Value("${jwt.audience}")
     private String jwtAudience;
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     @Bean
     public UserMapper userMapper() {

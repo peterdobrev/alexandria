@@ -5,16 +5,16 @@ meta {
 }
 
 delete {
-  url: {{baseUrl}}/api/reading-lists/{{id}}/items/{{documentId}}
+  url: {{baseUrl}}/api/reading-lists/:id/items/:documentId
   body: none
   auth: bearer
 }
 
-auth:bearer {
-  token: {{authToken}}
+params:path {
+  id: 039392da-9265-462e-b257-dd8b0ba69221
+  documentId: 
 }
 
-params:path {
-  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
-  documentId: d4e5f6a7-b8c9-0123-def0-123456789abc
+auth:bearer {
+  token: {{authToken}}
 }
