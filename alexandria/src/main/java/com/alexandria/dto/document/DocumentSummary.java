@@ -16,8 +16,6 @@ public record DocumentSummary(
         Set<CategorySummary> categories,
         boolean hasFile,
         boolean hasBody,
-        Long sizeBytes,
-        String contentType,
         Instant createdAt,
         Instant updatedAt
 ) {}

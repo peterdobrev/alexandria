@@ -5,16 +5,16 @@ meta {
 }
 
 delete {
-  url: {{baseUrl}}/api/documents/{{documentId}}/comments/{{commentId}}
+  url: {{baseUrl}}/api/documents/:documentId/comments/:commentId
   body: none
   auth: bearer
 }
 
-auth:bearer {
-  token: {{authToken}}
+params:path {
+  commentId: d15f20e8-8aea-4407-b6cd-e612b4739eff
+  documentId: 8375b658-7276-41a1-a9ae-9602af4cf500
 }
 
-params:path {
-  documentId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
-  commentId: b2c3d4e5-f6a7-8901-bcde-f12345678901
+auth:bearer {
+  token: {{authToken}}
 }

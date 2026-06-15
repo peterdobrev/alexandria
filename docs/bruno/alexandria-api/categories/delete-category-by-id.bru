@@ -5,15 +5,15 @@ meta {
 }
 
 delete {
-  url: {{baseUrl}}/api/categories/{{id}}
+  url: {{baseUrl}}/api/categories/:id
   body: none
   auth: bearer
 }
 
-auth:bearer {
-  token: {{authToken}}
+params:path {
+  id: 642b7cd2-ac3f-468f-a97f-3e821ebb15aa
 }
 
-params:path {
-  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+auth:bearer {
+  token: {{authToken}}
 }

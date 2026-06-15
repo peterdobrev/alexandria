@@ -6,11 +6,11 @@ import com.alexandria.dto.ReadingListItemResponse;
 import com.alexandria.dto.ReadingListResponse;
 import com.alexandria.dto.ReadingListSummaryResponse;
 import com.alexandria.dto.UpdateReadingListRequest;
+import com.alexandria.dto.common.PageResponse;
 import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.ReadingListService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -36,8 +36,8 @@ public class ReadingListController {
     private final SecurityUtils securityUtils;
 
     @GetMapping
-    public ResponseEntity<Page<ReadingListSummaryResponse>> getReadingLists(Pageable pageable) {
-        return ResponseEntity.ok(readingListService.getReadingLists(securityUtils.getCurrentUser(), pageable));
+    public ResponseEntity<PageResponse<ReadingListSummaryResponse>> getReadingLists(Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.of(readingListService.getReadingLists(securityUtils.getCurrentUser(), pageable)));
     }
 
     @PostMapping

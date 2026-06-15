@@ -5,15 +5,15 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/reading-lists/{{id}}
+  url: {{baseUrl}}/api/reading-lists/:id
   body: none
   auth: bearer
 }
 
-auth:bearer {
-  token: {{authToken}}
+params:path {
+  id: 039392da-9265-462e-b257-dd8b0ba69221
 }
 
-params:path {
-  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwZXRlcmRvYnJldnhkQGdtYWlsLmNvbSIsImlzcyI6ImFsZXhhbmRyaWEiLCJhdWQiOlsiYWxleGFuZHJpYS1hcGkiXSwianRpIjoiNzA1MGQ2YzMtMjI5Ny00MWJmLTliMWEtNTI3NzZjMWQzYTg1IiwiaWF0IjoxNzgxNTEwNzcxLCJleHAiOjE3ODE1MTI1NzF9.BZe6YGWwsEGl5QuO_2y6MD_wqZfdXzHI9LUW4lpzrPA
 }
