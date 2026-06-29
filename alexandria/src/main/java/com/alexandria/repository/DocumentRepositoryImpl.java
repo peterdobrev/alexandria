@@ -28,8 +28,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class DocumentRepositoryImpl implements DocumentRepositoryCustom {
 
@@ -80,6 +82,52 @@ public class DocumentRepositoryImpl implements DocumentRepositoryCustom {
             query.where(predicate);
         }
         query.distinct(true);
+        selectSummaryProjection(cb, query, root, author);
+        query.orderBy(toOrders(pageable.getSort(), root, cb));
+
+        return entityManager.createQuery(query)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList()
+                .stream()
+                .map(DocumentRow::from)
+                .toList();
+    }
+
+    @Override
+    public List<DocumentSummary> findSummariesByIds(List<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Tuple> query = cb.createTupleQuery();
+        Root<Document> root = query.from(Document.class);
+        Join<Object, Object> author = root.join("author", JoinType.LEFT);
+        query.where(root.get("id").in(ids));
+        selectSummaryProjection(cb, query, root, author);
+
+        List<DocumentRow> rows = entityManager.createQuery(query)
+                .getResultList()
+                .stream()
+                .map(DocumentRow::from)
+                .toList();
+
+        Map<UUID, Set<CategorySummary>> categoriesByDocument =
+                loadCategories(rows.stream().map(DocumentRow::id).toList());
+        Map<UUID, DocumentSummary> summariesById = rows.stream()
+                .collect(Collectors.toMap(
+                        DocumentRow::id,
+                        row -> row.toSummary(categoriesByDocument.getOrDefault(row.id(), Set.of()))));
+
+        // Preserve the caller's ordering (recommendations rely on score order).
+        return ids.stream()
+                .map(summariesById::get)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private static void selectSummaryProjection(CriteriaBuilder cb, CriteriaQuery<Tuple> query,
+                                                Root<Document> root, Join<Object, Object> author) {
         query.select(cb.tuple(
                 root.get("id").alias("id"),
                 root.get("title").alias("title"),
@@ -93,15 +141,6 @@ public class DocumentRepositoryImpl implements DocumentRepositoryCustom {
                 root.get("createdAt").alias("createdAt"),
                 root.get("updatedAt").alias("updatedAt")
         ));
-        query.orderBy(toOrders(pageable.getSort(), root, cb));
-
-        return entityManager.createQuery(query)
-                .setFirstResult((int) pageable.getOffset())
-                .setMaxResults(pageable.getPageSize())
-                .getResultList()
-                .stream()
-                .map(DocumentRow::from)
-                .toList();
     }
 
     private Map<UUID, Set<CategorySummary>> loadCategories(List<UUID> documentIds) {

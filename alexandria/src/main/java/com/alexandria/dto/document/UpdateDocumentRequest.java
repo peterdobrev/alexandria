@@ -16,6 +16,7 @@ public record UpdateDocumentRequest(
         @Size(max = 5000)
         String description,
 
+        @Size(max = 20)
         Set<UUID> categoryIds,
 
         Visibility visibility

@@ -138,13 +138,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex,
-                                                         HttpServletRequest request) {
-        log.warn("Forbidden on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-    }
-
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex,
                                                         HttpServletRequest request) {

@@ -3,9 +3,7 @@ package com.alexandria.service;
 import com.alexandria.dto.common.PageResponse;
 import com.alexandria.dto.document.AuthorSummary;
 import com.alexandria.dto.document.DocumentSummary;
-import com.alexandria.entity.Document;
 import com.alexandria.entity.Visibility;
-import com.alexandria.mapper.DocumentMapper;
 import com.alexandria.repository.DocumentRepository;
 import com.alexandria.repository.InteractionRepository;
 import com.alexandria.repository.RecommendationQueryRunner;
@@ -35,7 +33,6 @@ class RecommendationServiceTest {
     @Mock private InteractionRepository interactionRepository;
     @Mock private RecommendationQueryRunner queryRunner;
     @Mock private DocumentRepository documentRepository;
-    @Mock private DocumentMapper documentMapper;
 
     private RecommendationService classUnderTest;
 
@@ -44,20 +41,18 @@ class RecommendationServiceTest {
     @BeforeEach
     void setUp() {
         classUnderTest = new RecommendationService(
-                interactionRepository, queryRunner, documentRepository, documentMapper);
+                interactionRepository, queryRunner, documentRepository);
     }
 
     @Test
     void given_userWithNoInteractions_when_getRecommendations_then_runsColdStartQuery() {
         UUID docId = UUID.randomUUID();
-        Document doc = docWithId(docId);
         DocumentSummary summary = summaryWithId(docId);
 
         when(interactionRepository.countByUserId(userId)).thenReturn(0L);
         when(queryRunner.runColdStartQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of(docId));
         when(queryRunner.countColdStartQuery(userId)).thenReturn(1L);
-        when(documentRepository.findAllById(List.of(docId))).thenReturn(List.of(doc));
-        when(documentMapper.toSummary(doc)).thenReturn(summary);
+        when(documentRepository.findSummariesByIds(List.of(docId))).thenReturn(List.of(summary));
 
         PageResponse<DocumentSummary> result = classUnderTest.getRecommendations(userId, PageRequest.of(0, 20));
 
@@ -68,14 +63,12 @@ class RecommendationServiceTest {
     @Test
     void given_userWithInteractionsAndCandidates_when_getRecommendations_then_runsScoringQuery() {
         UUID docId = UUID.randomUUID();
-        Document doc = docWithId(docId);
         DocumentSummary summary = summaryWithId(docId);
 
         when(interactionRepository.countByUserId(userId)).thenReturn(7L);
         when(queryRunner.runScoreQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of(docId));
         when(queryRunner.countScoreQuery(userId)).thenReturn(1L);
-        when(documentRepository.findAllById(List.of(docId))).thenReturn(List.of(doc));
-        when(documentMapper.toSummary(doc)).thenReturn(summary);
+        when(documentRepository.findSummariesByIds(List.of(docId))).thenReturn(List.of(summary));
 
         PageResponse<DocumentSummary> result = classUnderTest.getRecommendations(userId, PageRequest.of(0, 20));
 
@@ -86,15 +79,13 @@ class RecommendationServiceTest {
     @Test
     void given_scoringReturnsEmpty_when_getRecommendations_then_fallsBackToColdStart() {
         UUID docId = UUID.randomUUID();
-        Document doc = docWithId(docId);
         DocumentSummary summary = summaryWithId(docId);
 
         when(interactionRepository.countByUserId(userId)).thenReturn(2L);
         when(queryRunner.runScoreQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of());
         when(queryRunner.runColdStartQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of(docId));
         when(queryRunner.countColdStartQuery(userId)).thenReturn(1L);
-        when(documentRepository.findAllById(List.of(docId))).thenReturn(List.of(doc));
-        when(documentMapper.toSummary(doc)).thenReturn(summary);
+        when(documentRepository.findSummariesByIds(List.of(docId))).thenReturn(List.of(summary));
 
         PageResponse<DocumentSummary> result = classUnderTest.getRecommendations(userId, PageRequest.of(0, 20));
 
@@ -111,25 +102,21 @@ class RecommendationServiceTest {
 
         assertThat(result.content()).isEmpty();
         assertThat(result.totalElements()).isZero();
-        verify(documentRepository, never()).findAllById(anyList());
+        verify(documentRepository, never()).findSummariesByIds(anyList());
     }
 
     @Test
     void given_scoredIds_when_getRecommendations_then_preservesOrderFromQuery() {
         UUID first = UUID.randomUUID();
         UUID second = UUID.randomUUID();
-        Document docFirst = docWithId(first);
-        Document docSecond = docWithId(second);
         DocumentSummary summaryFirst = summaryWithId(first);
         DocumentSummary summarySecond = summaryWithId(second);
 
         when(interactionRepository.countByUserId(userId)).thenReturn(5L);
         when(queryRunner.runScoreQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of(first, second));
         when(queryRunner.countScoreQuery(userId)).thenReturn(2L);
-        // findAllById intentionally returns in a DIFFERENT order than the input ids
-        when(documentRepository.findAllById(List.of(first, second))).thenReturn(List.of(docSecond, docFirst));
-        when(documentMapper.toSummary(docFirst)).thenReturn(summaryFirst);
-        when(documentMapper.toSummary(docSecond)).thenReturn(summarySecond);
+        when(documentRepository.findSummariesByIds(List.of(first, second)))
+                .thenReturn(List.of(summaryFirst, summarySecond));
 
         PageResponse<DocumentSummary> result = classUnderTest.getRecommendations(userId, PageRequest.of(0, 20));
 
@@ -138,19 +125,17 @@ class RecommendationServiceTest {
 
     @Test
     void given_documentDeletedConcurrentlyDuringPagination_when_getRecommendations_then_lastFlagComesFromTotalPages() {
-        // total=40 across 2 pages of 20; on page 0 a doc was deleted between
-        // the score query and findAllById, so content.size()==19 < pageSize.
-        // last must be false because we are still on page 0 of 2.
+        // total=40 across 2 pages of 20; on page 0 a doc was deleted between the score
+        // query and the summary fetch, so content.size()==1 < pageSize. last must be
+        // false because we are still on page 0 of 2.
         UUID present = UUID.randomUUID();
         UUID stale = UUID.randomUUID();
-        Document doc = docWithId(present);
         DocumentSummary summary = summaryWithId(present);
 
         when(interactionRepository.countByUserId(userId)).thenReturn(5L);
         when(queryRunner.runScoreQuery(eq(userId), eq(20), eq(0))).thenReturn(List.of(present, stale));
         when(queryRunner.countScoreQuery(userId)).thenReturn(40L);
-        when(documentRepository.findAllById(List.of(present, stale))).thenReturn(List.of(doc));
-        when(documentMapper.toSummary(doc)).thenReturn(summary);
+        when(documentRepository.findSummariesByIds(List.of(present, stale))).thenReturn(List.of(summary));
 
         PageResponse<DocumentSummary> result = classUnderTest.getRecommendations(userId, PageRequest.of(0, 20));
 
@@ -159,12 +144,6 @@ class RecommendationServiceTest {
     }
 
     // --- helpers ---
-
-    private static Document docWithId(UUID id) {
-        Document doc = new Document();
-        doc.setId(id);
-        return doc;
-    }
 
     private static DocumentSummary summaryWithId(UUID id) {
         return new DocumentSummary(

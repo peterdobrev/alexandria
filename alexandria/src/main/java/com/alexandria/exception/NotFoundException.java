@@ -1,14 +1,8 @@
 package com.alexandria.exception;
 
-import lombok.Getter;
-
-@Getter
 public abstract class NotFoundException extends RuntimeException {
 
-    private final String errorCode;
-
-    protected NotFoundException(String message, String errorCode) {
+    protected NotFoundException(String message) {
         super(message);
-        this.errorCode = errorCode;
     }
 }

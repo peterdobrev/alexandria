@@ -5,6 +5,6 @@ import java.util.UUID;
 public class CategoryNotFoundException extends NotFoundException {
 
     public CategoryNotFoundException(UUID id) {
-        super("Category not found: " + id, "CATEGORY_NOT_FOUND");
+        super("Category not found: " + id);
     }
 }

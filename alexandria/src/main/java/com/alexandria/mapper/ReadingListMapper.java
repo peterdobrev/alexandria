@@ -1,15 +1,17 @@
 package com.alexandria.mapper;
 
+import com.alexandria.dto.document.DocumentSummary;
 import com.alexandria.dto.readinglist.ReadingListItemResponse;
 import com.alexandria.dto.readinglist.ReadingListResponse;
 import com.alexandria.dto.readinglist.ReadingListSummaryResponse;
-import com.alexandria.entity.Document;
 import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.ReadingListItem;
 import com.alexandria.entity.Visibility;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -21,11 +23,12 @@ public class ReadingListMapper {
         return new ReadingListSummaryResponse(list.getId(), list.getName(), list.getCreatedAt());
     }
 
-    public ReadingListResponse toResponse(ReadingList list) {
+    public ReadingListResponse toResponse(ReadingList list, Map<UUID, DocumentSummary> summariesByDocumentId) {
         UUID ownerId = list.getUser().getId();
         List<ReadingListItemResponse> items = list.getItems().stream()
-                .filter(item -> isVisibleTo(item.getDocument(), ownerId))
-                .map(this::toItemResponse)
+                .map(item -> pairWithSummary(item, summariesByDocumentId.get(item.getDocument().getId())))
+                .filter(Objects::nonNull)
+                .filter(response -> isVisibleTo(response.document(), ownerId))
                 .toList();
         return new ReadingListResponse(list.getId(), list.getName(), list.getCreatedAt(), items);
     }
@@ -38,10 +41,14 @@ public class ReadingListMapper {
         );
     }
 
-    private static boolean isVisibleTo(Document document, UUID viewerId) {
-        if (document.getVisibility() == Visibility.PUBLIC) {
+    private static ReadingListItemResponse pairWithSummary(ReadingListItem item, DocumentSummary summary) {
+        return summary == null ? null : new ReadingListItemResponse(item.getId(), summary, item.getAddedAt());
+    }
+
+    private static boolean isVisibleTo(DocumentSummary document, UUID viewerId) {
+        if (document.visibility() == Visibility.PUBLIC) {
             return true;
         }
-        return document.getAuthor().getId().equals(viewerId);
+        return document.author() != null && document.author().id().equals(viewerId);
     }
 }

@@ -89,7 +89,7 @@ class ReadingListServiceTest {
         ReadingListResponse response = readingListResponse();
 
         when(readingListRepository.save(any(ReadingList.class))).thenReturn(saved);
-        when(readingListMapper.toResponse(any(ReadingList.class))).thenReturn(response);
+        when(readingListMapper.toResponse(any(ReadingList.class), any())).thenReturn(response);
 
         ReadingListResponse result = classUnderTest.createReadingList(request, currentUser);
 
@@ -111,7 +111,7 @@ class ReadingListServiceTest {
         ReadingListResponse response = readingListResponse();
 
         when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
-        when(readingListMapper.toResponse(any(ReadingList.class))).thenReturn(response);
+        when(readingListMapper.toResponse(any(ReadingList.class), any())).thenReturn(response);
 
         assertThat(classUnderTest.getReadingList(listId)).isEqualTo(response);
     }
@@ -135,7 +135,7 @@ class ReadingListServiceTest {
 
         when(readingListRepository.findById(any(UUID.class))).thenReturn(Optional.of(list));
         when(readingListRepository.save(any(ReadingList.class))).thenReturn(list);
-        when(readingListMapper.toResponse(any(ReadingList.class))).thenReturn(response);
+        when(readingListMapper.toResponse(any(ReadingList.class), any())).thenReturn(response);
 
         assertThat(classUnderTest.updateReadingList(listId, request)).isEqualTo(response);
         assertThat(list.getName()).isEqualTo("Updated Name");

@@ -1,5 +1,6 @@
 package com.alexandria.service;
 
+import com.alexandria.dto.document.DocumentSummary;
 import com.alexandria.dto.readinglist.AddReadingListItemRequest;
 import com.alexandria.dto.readinglist.CreateReadingListRequest;
 import com.alexandria.dto.readinglist.ReadingListItemResponse;
@@ -26,7 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Transactional
 @RequiredArgsConstructor
@@ -50,21 +55,35 @@ public class ReadingListService {
         list.setUser(currentUser);
         list.setCreatedAt(Instant.now());
         list.setItems(new ArrayList<>());
-        return readingListMapper.toResponse(readingListRepository.save(list));
+        ReadingList saved = readingListRepository.save(list);
+        return readingListMapper.toResponse(saved, documentSummaries(saved));
     }
 
     @Transactional(readOnly = true)
     public ReadingListResponse getReadingList(UUID id) {
         ReadingList list = readingListRepository.findById(id)
                 .orElseThrow(() -> new ReadingListNotFoundException(id));
-        return readingListMapper.toResponse(list);
+        return readingListMapper.toResponse(list, documentSummaries(list));
     }
 
     public ReadingListResponse updateReadingList(UUID id, UpdateReadingListRequest request) {
         ReadingList list = readingListRepository.findById(id)
                 .orElseThrow(() -> new ReadingListNotFoundException(id));
         list.setName(request.name());
-        return readingListMapper.toResponse(readingListRepository.save(list));
+        ReadingList saved = readingListRepository.save(list);
+        return readingListMapper.toResponse(saved, documentSummaries(saved));
+    }
+
+    private Map<UUID, DocumentSummary> documentSummaries(ReadingList list) {
+        List<ReadingListItem> items = list.getItems();
+        if (items == null || items.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> documentIds = items.stream()
+                .map(item -> item.getDocument().getId())
+                .toList();
+        return documentRepository.findSummariesByIds(documentIds).stream()
+                .collect(Collectors.toMap(DocumentSummary::id, Function.identity()));
     }
 
     public void deleteReadingList(UUID id) {

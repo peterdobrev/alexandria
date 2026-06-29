@@ -85,7 +85,7 @@ public class ServiceConfig {
     @Bean
     public RecommendationService recommendationService() {
         return new RecommendationService(
-                interactionRepository, recommendationQueryRunner(), documentRepository, documentMapper);
+                interactionRepository, recommendationQueryRunner(), documentRepository);
     }
 
     @Bean
