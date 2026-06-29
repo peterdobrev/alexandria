@@ -1,4 +1,4 @@
-package com.alexandria.dto;
+package com.alexandria.dto.readinglist;
 
 import java.time.Instant;
 import java.util.UUID;

@@ -1,12 +1,6 @@
 package com.alexandria.service;
 
-import com.alexandria.entity.Comment;
-import com.alexandria.entity.Document;
-import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.User;
-import com.alexandria.exception.CommentNotFoundException;
-import com.alexandria.exception.DocumentNotFoundException;
-import com.alexandria.exception.ReadingListNotFoundException;
 import com.alexandria.repository.CommentRepository;
 import com.alexandria.repository.DocumentRepository;
 import com.alexandria.repository.ReadingListRepository;
@@ -29,9 +23,12 @@ public class OwnershipService {
         if (principal == null) {
             return false;
         }
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException(documentId));
-        return document.getAuthor().getEmail().equals(principal.getUsername());
+        // A missing entity denies rather than throwing: authorization must not reveal
+        // whether a (possibly private) resource exists. The service layer issues the
+        // correct 404 for callers who pass authorization.
+        return documentRepository.findById(documentId)
+                .map(document -> document.getAuthor().getEmail().equals(principal.getUsername()))
+                .orElse(false);
     }
 
     public boolean isSelf(UUID userId, UserDetails principal) {
@@ -48,9 +45,9 @@ public class OwnershipService {
         if (principal == null) {
             return false;
         }
-        ReadingList list = readingListRepository.findById(listId)
-                .orElseThrow(() -> new ReadingListNotFoundException(listId));
-        return list.getUser().getEmail().equals(principal.getUsername());
+        return readingListRepository.findById(listId)
+                .map(list -> list.getUser().getEmail().equals(principal.getUsername()))
+                .orElse(false);
     }
 
     public boolean isCommentOwnerOrAdmin(UUID commentId, UserDetails principal) {
@@ -58,13 +55,13 @@ public class OwnershipService {
             return false;
         }
         boolean isAdmin = principal.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(RoleNames.ADMIN));
+                .anyMatch(a -> RoleNames.ADMIN.equals(a.getAuthority()));
         if (isAdmin) {
             // Admins may moderate any comment, including on private documents — intentional design
             return true;
         }
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException(commentId));
-        return comment.getAuthor().getEmail().equals(principal.getUsername());
+        return commentRepository.findById(commentId)
+                .map(comment -> comment.getAuthor().getEmail().equals(principal.getUsername()))
+                .orElse(false);
     }
 }

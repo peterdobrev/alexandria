@@ -2,7 +2,6 @@ package com.alexandria.service;
 
 import com.alexandria.dto.common.PageResponse;
 import com.alexandria.dto.document.AuthorSummary;
-import com.alexandria.dto.document.CategorySummary;
 import com.alexandria.dto.document.CreateArticleRequest;
 import com.alexandria.dto.document.DocumentDetail;
 import com.alexandria.dto.document.DocumentSummary;
@@ -32,7 +31,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
@@ -121,7 +119,7 @@ class DocumentServiceTest {
         assertThat(saved.getVisibility()).isEqualTo(Visibility.PUBLIC);
         assertThat(saved.getAuthor()).isSameAs(author);
         assertThat(saved.getDocumentCategories()).hasSize(1);
-        assertThat(saved.getDocumentCategories().get(0).getCategory()).isSameAs(category);
+        assertThat(saved.getDocumentCategories().getFirst().getCategory()).isSameAs(category);
     }
 
     @Test
@@ -230,21 +228,17 @@ class DocumentServiceTest {
     // ---------- list ----------
 
     @Test
-    void list_returnsPageResponseFromMappedSummaries() {
+    void list_returnsPageResponseFromSummaryPage() {
         UUID currentUserId = UUID.randomUUID();
         DocumentService.DocumentFilters filters =
                 new DocumentService.DocumentFilters(null, null, null, null);
         Pageable pageable = PageRequest.of(0, 20);
 
-        Document doc = new Document();
-        doc.setId(UUID.randomUUID());
-        DocumentSummary summary = sampleSummary(doc.getId());
+        DocumentSummary summary = sampleSummary(UUID.randomUUID());
+        Page<DocumentSummary> page = new PageImpl<>(List.of(summary), pageable, 1);
 
-        Page<Document> page = new PageImpl<>(List.of(doc), pageable, 1);
-
-        when(documentRepository.findAll(any(Specification.class), any(Pageable.class)))
+        when(documentRepository.findSummaryPage(any(), any(Pageable.class)))
                 .thenReturn(page);
-        when(documentMapper.toSummary(doc)).thenReturn(summary);
 
         PageResponse<DocumentSummary> response = classUnderTest.list(filters, pageable, currentUserId);
 
@@ -410,7 +404,7 @@ class DocumentServiceTest {
                 "ARTICLE",
                 Visibility.PUBLIC,
                 new AuthorSummary(UUID.randomUUID(), "Author"),
-                Set.<CategorySummary>of(),
+                Set.of(),
                 false,
                 true,
                 0L,
@@ -429,11 +423,9 @@ class DocumentServiceTest {
                 "ARTICLE",
                 Visibility.PUBLIC,
                 new AuthorSummary(UUID.randomUUID(), "Author"),
-                Set.<CategorySummary>of(),
+                Set.of(),
                 false,
                 true,
-                0L,
-                null,
                 Instant.now(),
                 Instant.now()
         );

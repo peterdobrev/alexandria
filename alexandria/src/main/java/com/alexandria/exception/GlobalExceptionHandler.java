@@ -1,6 +1,6 @@
 package com.alexandria.exception;
 
-import com.alexandria.dto.ErrorResponse;
+import com.alexandria.dto.common.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
 
         HttpHeaders headers = new HttpHeaders();
         List<MediaType> supported = ex.getSupportedMediaTypes();
-        if (supported != null && !supported.isEmpty()) {
+        if (!supported.isEmpty()) {
             headers.setAccept(supported);
         }
         return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, message, request, headers);
@@ -138,13 +138,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex,
-                                                         HttpServletRequest request) {
-        log.warn("Forbidden on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-    }
-
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex,
                                                         HttpServletRequest request) {
@@ -163,7 +156,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMaxUploadSize(MaxUploadSizeExceededException ex,
                                                              HttpServletRequest request) {
         log.warn("Upload too large on {}: {}", request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.PAYLOAD_TOO_LARGE, "Upload size exceeds the allowed limit", request);
+        return build(HttpStatus.CONTENT_TOO_LARGE, "Upload size exceeds the allowed limit", request);
     }
 
     @ExceptionHandler(MultipartException.class)

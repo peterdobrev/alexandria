@@ -1,4 +1,6 @@
-package com.alexandria.dto;
+package com.alexandria.dto.auth;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -9,7 +11,7 @@ public record AuthResponse(UUID userId, String token, String tokenType, long exp
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "AuthResponse[userId=" + userId
                 + ", token=***"
                 + ", tokenType=" + tokenType

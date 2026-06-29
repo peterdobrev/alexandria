@@ -1,5 +1,9 @@
 package com.alexandria.config;
 
+import com.alexandria.mapper.CategoryMapper;
+import com.alexandria.mapper.CommentMapper;
+import com.alexandria.mapper.DocumentMapper;
+import com.alexandria.mapper.ReadingListMapper;
 import com.alexandria.mapper.UserMapper;
 import com.alexandria.repository.RoleRepository;
 import com.alexandria.repository.UserRepository;
@@ -45,6 +49,26 @@ public class AppConfig {
     @Bean
     public UserMapper userMapper() {
         return new UserMapper();
+    }
+
+    @Bean
+    public DocumentMapper documentMapper() {
+        return new DocumentMapper();
+    }
+
+    @Bean
+    public CategoryMapper categoryMapper() {
+        return new CategoryMapper();
+    }
+
+    @Bean
+    public CommentMapper commentMapper() {
+        return new CommentMapper(userMapper());
+    }
+
+    @Bean
+    public ReadingListMapper readingListMapper() {
+        return new ReadingListMapper(documentMapper());
     }
 
     @Bean

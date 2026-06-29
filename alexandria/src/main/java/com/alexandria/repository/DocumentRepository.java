@@ -9,7 +9,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface DocumentRepository extends JpaRepository<Document, UUID>, JpaSpecificationExecutor<Document> {
+public interface DocumentRepository
+        extends JpaRepository<Document, UUID>, JpaSpecificationExecutor<Document>, DocumentRepositoryCustom {
 
     @Query("SELECT d FROM Document d LEFT JOIN FETCH d.documentCategories dc LEFT JOIN FETCH dc.category WHERE d.id = :id")
     Optional<Document> findWithCategoriesById(@Param("id") UUID id);

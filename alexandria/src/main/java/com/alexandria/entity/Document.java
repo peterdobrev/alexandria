@@ -39,9 +39,6 @@ public class Document {
     @Column(nullable = false)
     private String type;
 
-    @Column(name = "file_url")
-    private String fileUrl;
-
     @Column(name = "uploaded_file_path", length = 512)
     private String uploadedFilePath;
 

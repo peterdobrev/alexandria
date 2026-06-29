@@ -1,11 +1,10 @@
 package com.alexandria.controller;
 
-import com.alexandria.dto.AddReadingListItemRequest;
-import com.alexandria.dto.ReadingListItemResponse;
-import com.alexandria.dto.ReadingListResponse;
-import com.alexandria.dto.ReadingListSummaryResponse;
+import com.alexandria.dto.readinglist.AddReadingListItemRequest;
+import com.alexandria.dto.readinglist.ReadingListItemResponse;
+import com.alexandria.dto.readinglist.ReadingListResponse;
+import com.alexandria.dto.readinglist.ReadingListSummaryResponse;
 import com.alexandria.dto.document.AuthorSummary;
-import com.alexandria.dto.document.CategorySummary;
 import com.alexandria.dto.document.DocumentSummary;
 import com.alexandria.entity.User;
 import com.alexandria.entity.Visibility;
@@ -146,11 +145,9 @@ class ReadingListControllerTest {
                 "PDF",
                 Visibility.PUBLIC,
                 new AuthorSummary(UUID.randomUUID(), "Author"),
-                Set.<CategorySummary>of(),
+                Set.of(),
                 true,
                 false,
-                123L,
-                "application/pdf",
                 Instant.now(),
                 Instant.now()
         );

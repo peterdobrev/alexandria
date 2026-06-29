@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -55,7 +56,7 @@ public class DocumentController {
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) UUID authorId,
             @RequestParam(required = false) String search,
-            Pageable pageable,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal UserDetails principal) {
         validateSort(pageable.getSort());
         UUID currentUserId = currentUserId(principal).orElse(null);

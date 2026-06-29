@@ -25,7 +25,6 @@ import com.alexandria.storage.StoredFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +55,7 @@ public class DocumentService {
                 .orElseThrow(() -> new UserNotFoundException(currentUserId));
 
         StoredFile storedFile = fileStorage.store(file);
+        registerRollbackCleanup(storedFile.relativePath());
 
         Document document = new Document();
         document.setTitle(meta.title());
@@ -137,7 +137,7 @@ public class DocumentService {
         Document document = documentRepository.findWithCategoriesById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
         if (document.getVisibility() == Visibility.PRIVATE
-                && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {
+                && !document.getAuthor().getId().equals(currentUserId)) {
             throw new DocumentNotFoundException(id);
         }
         return documentMapper.toDetail(document);
@@ -163,9 +163,7 @@ public class DocumentService {
             spec = spec.and(DocumentSpecifications.titleContains(filters.search()));
         }
 
-        Page<Document> page = documentRepository.findAll(spec, pageable);
-        Page<DocumentSummary> mapped = page.map(documentMapper::toSummary);
-        return PageResponse.of(mapped);
+        return PageResponse.of(documentRepository.findSummaryPage(spec, pageable));
     }
 
     @Transactional(readOnly = true)
@@ -173,7 +171,7 @@ public class DocumentService {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException(id));
         if (document.getVisibility() == Visibility.PRIVATE
-                && (currentUserId == null || !document.getAuthor().getId().equals(currentUserId))) {
+                && !document.getAuthor().getId().equals(currentUserId)) {
             throw new DocumentNotFoundException(id);
         }
         if (document.getUploadedFilePath() == null) {
@@ -182,6 +180,25 @@ public class DocumentService {
         Resource resource = fileStorage.load(document.getUploadedFilePath());
         long size = document.getSizeBytes() != null ? document.getSizeBytes() : 0L;
         return new StoredFileResource(resource, document.getContentType(), document.getOriginalFilename(), size);
+    }
+
+    /**
+     * Deletes a freshly stored file if the surrounding transaction rolls back,
+     * preventing orphaned files when the document row fails to persist.
+     */
+    private void registerRollbackCleanup(String relativePath) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    try {
+                        fileStorage.delete(relativePath);
+                    } catch (Exception e) {
+                        log.warn("Failed to delete orphaned file {} after rollback", relativePath, e);
+                    }
+                }
+            }
+        });
     }
 
     private List<Category> resolveCategories(Set<UUID> categoryIds) {

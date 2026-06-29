@@ -1,6 +1,6 @@
 package com.alexandria.security;
 
-import com.alexandria.dto.ErrorResponse;
+import com.alexandria.dto.common.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

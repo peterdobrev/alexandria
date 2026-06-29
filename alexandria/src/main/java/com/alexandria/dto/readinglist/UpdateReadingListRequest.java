@@ -1,4 +1,4 @@
-package com.alexandria.dto;
+package com.alexandria.dto.readinglist;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

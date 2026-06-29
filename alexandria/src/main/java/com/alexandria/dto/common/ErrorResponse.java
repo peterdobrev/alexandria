@@ -1,4 +1,4 @@
-package com.alexandria.dto;
+package com.alexandria.dto.common;
 
 import java.time.Instant;
 

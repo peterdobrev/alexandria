@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: "009"
+      author: alexandria
+      comment: >-
+        Drop the unused documents.file_url column. It was an early-design
+        placeholder for an externally hosted file link, superseded in changeset
+        004 by uploaded_file_path/original_filename/content_type/size_bytes for
+        self-hosted file storage. The column was never read or written and is
+        NULL for every row.
+      changes:
+        - dropColumn:
+            tableName: documents
+            columnName: file_url
+      rollback:
+        - addColumn:
+            tableName: documents
+            columns:
+              - column:
+                  name: file_url
+                  type: varchar(255)

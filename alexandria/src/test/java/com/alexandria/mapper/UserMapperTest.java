@@ -1,6 +1,6 @@
 package com.alexandria.mapper;
 
-import com.alexandria.dto.RegisterRequest;
+import com.alexandria.dto.auth.RegisterRequest;
 import com.alexandria.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
