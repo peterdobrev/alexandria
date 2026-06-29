@@ -3,9 +3,7 @@ package com.alexandria.mapper;
 import com.alexandria.dto.comment.CommentResponse;
 import com.alexandria.entity.Comment;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
-@Component
 @RequiredArgsConstructor
 public class CommentMapper {
 

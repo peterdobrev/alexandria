@@ -8,12 +8,10 @@ import com.alexandria.entity.ReadingList;
 import com.alexandria.entity.ReadingListItem;
 import com.alexandria.entity.Visibility;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.UUID;
 
-@Component
 @RequiredArgsConstructor
 public class ReadingListMapper {
 

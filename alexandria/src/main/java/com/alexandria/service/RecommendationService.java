@@ -42,7 +42,10 @@ public class RecommendationService {
             total = queryRunner.countColdStartQuery(userId);
         } else {
             ids = queryRunner.runScoreQuery(userId, pageSize, offset);
-            if (ids.isEmpty()) {
+            // Only fall back to cold-start when there are genuinely no scored results
+            // (first page). Paging past the end of scored results must stay in score
+            // mode with the score total, otherwise content and totals flip mid-pagination.
+            if (ids.isEmpty() && offset == 0) {
                 ids = queryRunner.runColdStartQuery(userId, pageSize, offset);
                 total = queryRunner.countColdStartQuery(userId);
             } else {

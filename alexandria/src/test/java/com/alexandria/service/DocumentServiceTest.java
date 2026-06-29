@@ -25,14 +25,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
@@ -230,21 +228,17 @@ class DocumentServiceTest {
     // ---------- list ----------
 
     @Test
-    void list_returnsPageResponseFromMappedSummaries() {
+    void list_returnsPageResponseFromSummaryPage() {
         UUID currentUserId = UUID.randomUUID();
         DocumentService.DocumentFilters filters =
                 new DocumentService.DocumentFilters(null, null, null, null);
         Pageable pageable = PageRequest.of(0, 20);
 
-        Document doc = new Document();
-        doc.setId(UUID.randomUUID());
-        DocumentSummary summary = sampleSummary(doc.getId());
+        DocumentSummary summary = sampleSummary(UUID.randomUUID());
+        Page<DocumentSummary> page = new PageImpl<>(List.of(summary), pageable, 1);
 
-        Page<Document> page = new PageImpl<>(List.of(doc), pageable, 1);
-
-        when(documentRepository.findAll(ArgumentMatchers.<Specification<Document>>any(), any(Pageable.class)))
+        when(documentRepository.findSummaryPage(any(), any(Pageable.class)))
                 .thenReturn(page);
-        when(documentMapper.toSummary(doc)).thenReturn(summary);
 
         PageResponse<DocumentSummary> response = classUnderTest.list(filters, pageable, currentUserId);
 

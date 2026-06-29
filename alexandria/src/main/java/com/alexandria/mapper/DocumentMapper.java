@@ -7,14 +7,13 @@ import com.alexandria.dto.document.DocumentSummary;
 import com.alexandria.entity.Document;
 import com.alexandria.entity.DocumentCategory;
 import com.alexandria.entity.User;
-import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Component
 public class DocumentMapper {
 
     public DocumentSummary toSummary(Document d) {
@@ -65,7 +64,7 @@ public class DocumentMapper {
         }
         return documentCategories.stream()
                 .map(DocumentCategory::getCategory)
-                .filter(c -> c != null)
+                .filter(Objects::nonNull)
                 .map(c -> new CategorySummary(c.getId(), c.getName()))
                 .collect(Collectors.toUnmodifiableSet());
     }
