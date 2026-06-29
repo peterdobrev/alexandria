@@ -1,11 +1,11 @@
 package com.alexandria.controller;
 
-import com.alexandria.dto.AddReadingListItemRequest;
-import com.alexandria.dto.CreateReadingListRequest;
-import com.alexandria.dto.ReadingListItemResponse;
-import com.alexandria.dto.ReadingListResponse;
-import com.alexandria.dto.ReadingListSummaryResponse;
-import com.alexandria.dto.UpdateReadingListRequest;
+import com.alexandria.dto.readinglist.AddReadingListItemRequest;
+import com.alexandria.dto.readinglist.CreateReadingListRequest;
+import com.alexandria.dto.readinglist.ReadingListItemResponse;
+import com.alexandria.dto.readinglist.ReadingListResponse;
+import com.alexandria.dto.readinglist.ReadingListSummaryResponse;
+import com.alexandria.dto.readinglist.UpdateReadingListRequest;
 import com.alexandria.dto.common.PageResponse;
 import com.alexandria.security.SecurityUtils;
 import com.alexandria.service.ReadingListService;

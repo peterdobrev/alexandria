@@ -1,8 +1,8 @@
 package com.alexandria.controller;
 
-import com.alexandria.dto.AuthResponse;
-import com.alexandria.dto.LoginRequest;
-import com.alexandria.dto.RegisterRequest;
+import com.alexandria.dto.auth.AuthResponse;
+import com.alexandria.dto.auth.LoginRequest;
+import com.alexandria.dto.auth.RegisterRequest;
 import com.alexandria.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
