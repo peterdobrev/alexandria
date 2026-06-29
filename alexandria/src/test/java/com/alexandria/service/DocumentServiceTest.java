@@ -2,7 +2,6 @@ package com.alexandria.service;
 
 import com.alexandria.dto.common.PageResponse;
 import com.alexandria.dto.document.AuthorSummary;
-import com.alexandria.dto.document.CategorySummary;
 import com.alexandria.dto.document.CreateArticleRequest;
 import com.alexandria.dto.document.DocumentDetail;
 import com.alexandria.dto.document.DocumentSummary;
@@ -26,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -121,7 +121,7 @@ class DocumentServiceTest {
         assertThat(saved.getVisibility()).isEqualTo(Visibility.PUBLIC);
         assertThat(saved.getAuthor()).isSameAs(author);
         assertThat(saved.getDocumentCategories()).hasSize(1);
-        assertThat(saved.getDocumentCategories().get(0).getCategory()).isSameAs(category);
+        assertThat(saved.getDocumentCategories().getFirst().getCategory()).isSameAs(category);
     }
 
     @Test
@@ -242,7 +242,7 @@ class DocumentServiceTest {
 
         Page<Document> page = new PageImpl<>(List.of(doc), pageable, 1);
 
-        when(documentRepository.findAll(any(Specification.class), any(Pageable.class)))
+        when(documentRepository.findAll(ArgumentMatchers.<Specification<Document>>any(), any(Pageable.class)))
                 .thenReturn(page);
         when(documentMapper.toSummary(doc)).thenReturn(summary);
 
@@ -410,7 +410,7 @@ class DocumentServiceTest {
                 "ARTICLE",
                 Visibility.PUBLIC,
                 new AuthorSummary(UUID.randomUUID(), "Author"),
-                Set.<CategorySummary>of(),
+                Set.of(),
                 false,
                 true,
                 0L,
@@ -429,11 +429,9 @@ class DocumentServiceTest {
                 "ARTICLE",
                 Visibility.PUBLIC,
                 new AuthorSummary(UUID.randomUUID(), "Author"),
-                Set.<CategorySummary>of(),
+                Set.of(),
                 false,
                 true,
-                0L,
-                null,
                 Instant.now(),
                 Instant.now()
         );

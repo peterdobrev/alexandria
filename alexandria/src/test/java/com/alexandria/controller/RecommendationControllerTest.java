@@ -146,7 +146,7 @@ class RecommendationControllerTest {
                 id, "title", "desc", "ARTICLE", Visibility.PUBLIC,
                 new AuthorSummary(UUID.randomUUID(), "Author"),
                 Set.of(),
-                false, true, null, null,
+                false, true,
                 Instant.now(), Instant.now()
         );
     }
